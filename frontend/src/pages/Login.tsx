@@ -16,7 +16,7 @@ export function Login() {
     setEnviando(true);
     try {
       await api.login(email, password);
-      navegar("/contratos");
+      navegar("/tablero");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado");
     } finally {

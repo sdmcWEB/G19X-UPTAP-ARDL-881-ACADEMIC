@@ -115,10 +115,39 @@ frontend/
     lib/api.ts           Cliente HTTP
     lib/tipos.ts         Tipos compartidos
     components/
+      Layout.tsx         Cascarón con navegación
       VisorContrato.tsx  react-pdf + capa de resaltado
       PanelHallazgos.tsx Lista, filtro y estado de cita
-    pages/               Login · Contratos · Detalle
+      viz/               Tarjeta con gemela en tabla, tooltip, stat tile,
+                         medidor y las cuatro gráficas del tablero
+    pages/               Login · Dashboard · Contratos · Detalle
 ```
+
+## El tablero
+
+Cinco tarjetas sobre una sola rebanada de datos: el filtro de periodo vive
+arriba de todo y las recalcula juntas.
+
+| Tarjeta | Forma | Por qué esa |
+|---|---|---|
+| Riesgo · contratos · hallazgos · citas | Stat tiles | Son cifras sueltas. Una barra de un solo dato no es una gráfica. |
+| Calidad de la evidencia | Barra apilada horizontal | Parte-todo de tres clases con polaridad. Usa la paleta de estado porque *es* estado. |
+| Hallazgos por severidad | Columnas, rampa ordinal | La severidad es una categoría **ordenada**: un solo tono, más severo = más oscuro. |
+| Tipos de riesgo | Barras horizontales, un solo color | Categorías **nominales**: oscurecer la barra más larga doblaría en el color lo que el largo ya dice. |
+| Actividad | Múltiplos pequeños | Contratos y hallazgos viven en escalas distintas. Dos ejes en un plot inventan una correlación que no está en los datos. |
+| Contratos de mayor riesgo | Tabla con medidores | Cinco filas con nombre y puntuación: se lee mejor en tabla que en barras. |
+
+Cada gráfica tiene su **gemela en tabla** (botón "Ver tabla"): ningún valor
+queda accesible solo por color o solo por tooltip. Las rampas están validadas
+con el verificador de la guía de visualización — la ordinal de severidad pasa
+las cuatro comprobaciones en modo claro y oscuro; el trío de estado pasa
+separación CVD (ΔE 11.3) y visión normal (ΔE 27.6), y su contraste bajo en
+claro lleva la mitigación prescrita: etiquetas visibles y vista de tabla.
+
+Los pasos oscuros están definidos y validados pero se activan con
+`data-theme="dark"`, no con la preferencia del sistema: el resto de la app es
+solo claro y seguir al sistema operativo pondría tarjetas oscuras dentro de un
+cascarón blanco.
 
 ## Decisiones y por qué
 
@@ -146,7 +175,6 @@ frontend/
 
 ## Pendiente
 
-- [ ] Dashboard con Recharts (el endpoint `/api/hallazgos/resumen/dashboard` ya existe)
 - [ ] Búsqueda semántica sobre cláusulas (pgvector ya está, falta exponerlo)
 - [ ] Exportar reporte de revisión a PDF
 - [ ] Langfuse para trazas del modelo

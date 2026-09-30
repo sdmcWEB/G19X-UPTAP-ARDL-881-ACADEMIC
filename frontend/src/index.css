@@ -1,13 +1,92 @@
 @import "tailwindcss";
 
-@theme {
-  --color-critica: oklch(0.55 0.22 25);
-  --color-alta: oklch(0.68 0.19 45);
-  --color-media: oklch(0.80 0.16 85);
-  --color-baja: oklch(0.72 0.12 200);
-  --color-informativa: oklch(0.65 0.03 260);
-}
-
 /* react-pdf necesita estas hojas para la capa de texto y las anotaciones */
 @import "react-pdf/dist/Page/TextLayer.css";
 @import "react-pdf/dist/Page/AnnotationLayer.css";
+
+/* ---------------------------------------------------------------------------
+   Tokens de visualización.
+
+   Se declaran por rol, no por hex: el modo oscuro se cambia en un solo lugar
+   y las gráficas se escriben contra roles.
+
+   Los pasos oscuros se activan con [data-theme="dark"], no con la preferencia
+   del sistema: el resto de la app es solo claro, y seguir al sistema operativo
+   por cuenta propia pondría tarjetas oscuras dentro de un cascarón blanco. El
+   día que la app tenga interruptor de tema, esto ya está listo.
+
+   Las rampas ordinales de severidad y el trío de estado están validados con
+   scripts/validate_palette.js de la guía de visualización.
+--------------------------------------------------------------------------- */
+
+.viz-root {
+  color-scheme: light;
+
+  /* Superficies e ink */
+  --surface-1: #fcfcfb;
+  --plane: #f9f9f7;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --hairline: rgb(11 11 11 / 10%);
+
+  /* Serie única (categorías nominales: un solo color para todas las barras) */
+  --series-1: #2a78d6;
+
+  /* Severidad — rampa ordinal de un solo tono, más severo = más oscuro.
+     Arranca en el paso 250: más claro que eso no despega de la superficie. */
+  --sev-informativa: #86b6ef;
+  --sev-baja: #5598e7;
+  --sev-media: #2a78d6;
+  --sev-alta: #1c5cab;
+  --sev-critica: #104281;
+
+  /* Estado — paleta reservada, nunca se reusa para series.
+     Siempre acompañada de etiqueta: el color no carga el significado solo. */
+  --estado-bueno: #0ca30c;
+  --estado-advertencia: #fab219;
+  --estado-critico: #d03b3b;
+
+  /* Medidor — la pista es un paso más claro de la misma rampa que el relleno */
+  --medidor-pista: #cde2fb;
+  --medidor-pista-advertencia: #fdeec9;
+  --medidor-pista-critico: #f6d8d8;
+}
+
+:root[data-theme="dark"] .viz-root {
+  color-scheme: dark;
+
+  --surface-1: #1a1a19;
+  --plane: #0d0d0d;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --hairline: rgb(255 255 255 / 10%);
+
+  --series-1: #3987e5;
+
+  --sev-informativa: #184f95;
+  --sev-baja: #256abf;
+  --sev-media: #3987e5;
+  --sev-alta: #6da7ec;
+  --sev-critica: #9ec5f4;
+
+  --estado-bueno: #0ca30c;
+  --estado-advertencia: #fab219;
+  --estado-critico: #d03b3b;
+
+  --medidor-pista: #184f95;
+  --medidor-pista-advertencia: #4a3608;
+  --medidor-pista-critico: #4a1414;
+}
+
+/* Recharts pinta un rectángulo de foco al tabular sobre la superficie del
+   gráfico; el foco visible lo manejan nuestros propios controles. */
+.recharts-wrapper:focus,
+.recharts-surface:focus {
+  outline: none;
+}

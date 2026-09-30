@@ -1,4 +1,4 @@
-import type { Contrato, ContratoDetalle } from "./tipos";
+import type { Contrato, ContratoDetalle, Resumen } from "./tipos";
 
 const TOKEN_KEY = "riesgos.access_token";
 
@@ -55,7 +55,8 @@ export const api = {
 
   contrato: (id: string) => request<ContratoDetalle>(`/contratos/${id}`),
 
-  dashboard: () => request<Record<string, unknown>>("/hallazgos/resumen/dashboard"),
+  // El backend lee `dias=0` como "todo el histórico".
+  dashboard: (dias: number | null) => request<Resumen>(`/dashboard?dias=${dias ?? 0}`),
 
   async subir(archivo: File) {
     const body = new FormData();

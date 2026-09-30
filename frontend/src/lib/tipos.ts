@@ -76,3 +76,48 @@ export const ETIQUETA_VERIFICACION: Record<Verificacion, string> = {
   aproximada: "Cita aproximada",
   no_verificada: "Cita no verificada",
 };
+
+// --- Tablero ---
+
+export interface Conteo {
+  clave: string;
+  etiqueta: string;
+  total: number;
+}
+
+export interface PuntoTendencia {
+  fecha: string; // ISO (YYYY-MM-DD)
+  contratos: number;
+  hallazgos: number;
+}
+
+export interface ContratoRiesgoso {
+  id: string;
+  nombre_archivo: string;
+  puntuacion_riesgo: number;
+  hallazgos: number;
+  ocr_aplicado: boolean;
+}
+
+export interface Resumen {
+  dias: number | null;
+  contratos_totales: number;
+  contratos_analizados: number;
+  hallazgos_totales: number;
+  riesgo_promedio: number | null;
+  pct_citas_verificadas: number | null;
+  pct_con_ocr: number | null;
+  por_severidad: Conteo[];
+  por_verificacion: Conteo[];
+  por_tipo: Conteo[];
+  tendencia: PuntoTendencia[];
+  contratos_riesgosos: ContratoRiesgoso[];
+}
+
+/** Opciones del filtro de periodo. `null` = todo el histórico. */
+export const PERIODOS: { etiqueta: string; dias: number | null }[] = [
+  { etiqueta: "30 días", dias: 30 },
+  { etiqueta: "90 días", dias: 90 },
+  { etiqueta: "1 año", dias: 365 },
+  { etiqueta: "Todo", dias: null },
+];
