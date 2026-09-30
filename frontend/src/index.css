@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --color-critica: oklch(0.55 0.22 25);
+  --color-alta: oklch(0.68 0.19 45);
+  --color-media: oklch(0.80 0.16 85);
+  --color-baja: oklch(0.72 0.12 200);
+  --color-informativa: oklch(0.65 0.03 260);
+}
+
+/* react-pdf necesita estas hojas para la capa de texto y las anotaciones */
+@import "react-pdf/dist/Page/TextLayer.css";
+@import "react-pdf/dist/Page/AnnotationLayer.css";

@@ -1,0 +1,19 @@
+# Entorno
+.env
+.venv/
+__pycache__/
+*.py[cod]
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Herramientas
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+
+# Datos locales
+*.pdf
+!docs/**/*.pdf

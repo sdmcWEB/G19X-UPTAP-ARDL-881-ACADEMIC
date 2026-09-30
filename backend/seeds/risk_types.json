@@ -1,0 +1,146 @@
+[
+  {
+    "codigo": "PENALIZACION_DESPROPORCIONADA",
+    "nombre": "Penalización desproporcionada",
+    "descripcion": "Penas convencionales o multas excesivas frente al valor del contrato, o sin tope máximo.",
+    "severidad_default": "alta",
+    "peso": 1.0,
+    "activo": true
+  },
+  {
+    "codigo": "RESPONSABILIDAD_ILIMITADA",
+    "nombre": "Responsabilidad ilimitada",
+    "descripcion": "Ausencia de tope de responsabilidad, o responsabilidad que abarca daños indirectos y lucro cesante.",
+    "severidad_default": "critica",
+    "peso": 1.2,
+    "activo": true
+  },
+  {
+    "codigo": "TERMINACION_UNILATERAL",
+    "nombre": "Terminación unilateral desfavorable",
+    "descripcion": "La contraparte puede terminar sin causa ni aviso razonable, o sin contraprestación equivalente.",
+    "severidad_default": "alta",
+    "peso": 1.0,
+    "activo": true
+  },
+  {
+    "codigo": "RENOVACION_AUTOMATICA",
+    "nombre": "Renovación automática sin salida clara",
+    "descripcion": "Prórroga automática con ventana de aviso muy corta o sin mecanismo práctico de terminación.",
+    "severidad_default": "media",
+    "peso": 0.8,
+    "activo": true
+  },
+  {
+    "codigo": "PROPIEDAD_INTELECTUAL",
+    "nombre": "Cesión amplia de propiedad intelectual",
+    "descripcion": "Transferencia de PI más allá del objeto del contrato, o cesión de desarrollos previos y herramientas propias.",
+    "severidad_default": "critica",
+    "peso": 1.2,
+    "activo": true
+  },
+  {
+    "codigo": "CONFIDENCIALIDAD_ASIMETRICA",
+    "nombre": "Confidencialidad asimétrica",
+    "descripcion": "Obligaciones de confidencialidad que recaen en una sola parte, con plazos indefinidos o sin excepciones estándar.",
+    "severidad_default": "media",
+    "peso": 0.8,
+    "activo": true
+  },
+  {
+    "codigo": "CONDICIONES_PAGO",
+    "nombre": "Condiciones de pago desfavorables",
+    "descripcion": "Plazos de pago excesivos, pagos condicionados a aceptación discrecional, o sin intereses moratorios.",
+    "severidad_default": "alta",
+    "peso": 1.0,
+    "activo": true
+  },
+  {
+    "codigo": "JURISDICCION_DESFAVORABLE",
+    "nombre": "Jurisdicción o ley aplicable desfavorable",
+    "descripcion": "Foro en jurisdicción ajena, arbitraje de costo prohibitivo, o renuncia a la competencia natural.",
+    "severidad_default": "media",
+    "peso": 0.9,
+    "activo": true
+  },
+  {
+    "codigo": "INDEMNIZACION_AMPLIA",
+    "nombre": "Obligación de indemnizar demasiado amplia",
+    "descripcion": "Deber de sacar en paz y a salvo a la contraparte por hechos fuera del propio control.",
+    "severidad_default": "alta",
+    "peso": 1.1,
+    "activo": true
+  },
+  {
+    "codigo": "EXCLUSIVIDAD_NO_COMPETENCIA",
+    "nombre": "Exclusividad o no competencia excesiva",
+    "descripcion": "Restricciones de exclusividad o no competencia amplias en territorio, plazo o giro, sin compensación.",
+    "severidad_default": "media",
+    "peso": 0.9,
+    "activo": true
+  },
+  {
+    "codigo": "MODIFICACION_UNILATERAL",
+    "nombre": "Modificación unilateral de términos",
+    "descripcion": "Una parte puede cambiar precios, alcances o condiciones sin consentimiento de la otra.",
+    "severidad_default": "alta",
+    "peso": 1.0,
+    "activo": true
+  },
+  {
+    "codigo": "DATOS_PERSONALES",
+    "nombre": "Tratamiento de datos personales sin garantías",
+    "descripcion": "Manejo de datos personales sin definir responsable, encargado, finalidades ni medidas de seguridad conforme a la LFPDPPP.",
+    "severidad_default": "alta",
+    "peso": 1.1,
+    "activo": true
+  },
+  {
+    "codigo": "NIVEL_SERVICIO",
+    "nombre": "Niveles de servicio sin definir",
+    "descripcion": "Obligaciones de servicio sin métricas, plazos ni consecuencias medibles por incumplimiento.",
+    "severidad_default": "media",
+    "peso": 0.8,
+    "activo": true
+  },
+  {
+    "codigo": "CESION_CONTRATO",
+    "nombre": "Cesión del contrato sin consentimiento",
+    "descripcion": "La contraparte puede ceder el contrato a un tercero sin autorización previa.",
+    "severidad_default": "media",
+    "peso": 0.8,
+    "activo": true
+  },
+  {
+    "codigo": "OBLIGACION_CRITICA_OCULTA",
+    "nombre": "Obligación crítica en anexo o remisión",
+    "descripcion": "Obligaciones relevantes remitidas a anexos, políticas externas o documentos no adjuntos.",
+    "severidad_default": "media",
+    "peso": 0.9,
+    "activo": true
+  },
+  {
+    "codigo": "INCONSISTENCIA_INTERNA",
+    "nombre": "Inconsistencia o contradicción interna",
+    "descripcion": "Cláusulas que se contradicen entre sí, referencias cruzadas rotas, plazos o montos incongruentes.",
+    "severidad_default": "media",
+    "peso": 0.9,
+    "activo": true
+  },
+  {
+    "codigo": "FUERZA_MAYOR",
+    "nombre": "Fuerza mayor desbalanceada",
+    "descripcion": "La cláusula de caso fortuito protege solo a una parte o excluye supuestos razonables.",
+    "severidad_default": "baja",
+    "peso": 0.7,
+    "activo": true
+  },
+  {
+    "codigo": "VIGENCIA_INDEFINIDA",
+    "nombre": "Vigencia indefinida o ambigua",
+    "descripcion": "No se define plazo, inicio de vigencia o condiciones de conclusión del contrato.",
+    "severidad_default": "media",
+    "peso": 0.8,
+    "activo": true
+  }
+]
