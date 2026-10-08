@@ -44,6 +44,29 @@ en el volumen `hfcache`, así que solo pasa una vez.
 docker compose exec api python -m pytest tests/ -q
 ```
 
+Sin Docker, los tests solo necesitan el set base más `dev` — ni PyTorch ni base
+de datos:
+
+```bash
+cd backend && pip install -e ".[dev]" && pytest tests/ -q
+```
+
+`sentence-transformers` vive en el extra `ml` porque arrastra PyTorch (~2 GB) y
+solo el worker lo usa. El Dockerfile instala `.[dev,ml]`; CI instala `.[dev]`.
+
+## Problema conocido: el llavero de macOS bloquea los pulls
+
+Si `docker compose up` falla con `error getting credentials … Keychain Error` o
+se queda colgado sin avanzar, macOS está mostrando un diálogo de acceso al
+llavero que nadie contesta. El ítem guardado de Docker Hub no autoriza al
+binario actual de `docker` (pasa al cambiar de Docker Desktop a OrbStack).
+
+Las imágenes del proyecto son públicas, así que la credencial no hace falta:
+
+```bash
+docker logout
+```
+
 ## Cómo funciona
 
 ```
@@ -178,5 +201,4 @@ cascarón blanco.
 - [ ] Búsqueda semántica sobre cláusulas (pgvector ya está, falta exponerlo)
 - [ ] Exportar reporte de revisión a PDF
 - [ ] Langfuse para trazas del modelo
-- [ ] GitHub Actions (lint + tests)
 - [ ] Set de evaluación etiquetado y métricas de precisión

@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "riesgos-contractuales"
 version = "0.1.0"
@@ -21,13 +25,20 @@ dependencies = [
     "python-docx>=1.1",
     "ocrmypdf>=16.6",
     "rapidfuzz>=3.10",
-    "sentence-transformers>=3.3",
-    "xai-sdk>=0.1",
+    "xai-sdk>=1.20",
     "structlog>=24.4",
 ]
 
 [project.optional-dependencies]
+# Solo el worker lo necesita, y arrastra PyTorch. Fuera del set base para que
+# CI y los tests no paguen la descarga.
+ml = ["sentence-transformers>=3.3"]
 dev = ["pytest>=8.3", "pytest-asyncio>=0.24", "httpx>=0.28", "ruff>=0.8"]
+
+[tool.setuptools.packages.find]
+# Sin esto setuptools intenta adivinar y se atraganta con `seeds/` y
+# `alembic/`, que están al mismo nivel que `app/` pero no son paquetes.
+include = ["app*"]
 
 [tool.ruff]
 line-length = 100

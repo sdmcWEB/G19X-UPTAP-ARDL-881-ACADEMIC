@@ -14,7 +14,13 @@ from app.config import settings
 
 @lru_cache
 def _modelo():
-    from sentence_transformers import SentenceTransformer
+    try:
+        from sentence_transformers import SentenceTransformer
+    except ImportError as exc:  # pragma: no cover - depende del entorno
+        raise RuntimeError(
+            "sentence-transformers no está instalado. Es el extra `ml`: "
+            'pip install -e ".[ml]". El worker lo necesita; la API y los tests no.'
+        ) from exc
 
     return SentenceTransformer(settings.embedding_model)
 

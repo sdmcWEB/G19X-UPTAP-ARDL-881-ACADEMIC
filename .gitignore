@@ -12,6 +12,7 @@ dist/
 # Herramientas
 .pytest_cache/
 .ruff_cache/
+*.egg-info/
 .DS_Store
 
 # Datos locales
