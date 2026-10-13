@@ -33,7 +33,6 @@ docker compose exec -e ADMIN_PASSWORD='tu-password' api python scripts/seed.py
 |---|---|
 | API + docs | http://localhost:8000/docs |
 | Frontend | http://localhost:5173 |
-| MinIO (consola) | http://localhost:9001 |
 
 El worker descarga el modelo de embeddings (~2 GB) en el primer análisis. Queda
 en el volumen `hfcache`, así que solo pasa una vez.
@@ -115,7 +114,7 @@ backend/
     schemas.py           Schemas HTTP
     security.py          JWT + argon2
     deps.py              Auth y autorización por rol
-    storage.py           MinIO
+    storage.py           Archivos en volumen, con la interfaz de un almacén de objetos
     audit.py             Registro de auditoría
     tasks.py             Pipeline Celery
     routers/             auth · contratos · hallazgos
@@ -176,6 +175,12 @@ cascarón blanco.
 
 - **pgvector en Postgres**, no un motor de búsqueda aparte: un servicio menos
   que operar y desplegar.
+- **Archivos en un volumen**, no en MinIO: MinIO dejó de publicar imágenes
+  accesibles sin registro, y a la escala de este proyecto un servicio de
+  objetos aparte no se paga solo. `storage.py` conserva la interfaz de un
+  almacén de objetos (`put` / `get` / `delete`), así que migrar a S3 es
+  reescribir ese archivo y nada más. Las llaves se confinan a la raíz del
+  volumen: el nombre del archivo lo elige quien sube el contrato.
 - **Embeddings locales (`bge-m3`)**: xAI no expone endpoint de embeddings, y
   bge-m3 rinde bien en español sin costo por token.
 - **Sin LangChain**: en este alcance el SDK directo es menos código y más control.

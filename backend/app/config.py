@@ -17,12 +17,8 @@ class Settings(BaseSettings):
     # Celery
     redis_url: str = "redis://localhost:6379/0"
 
-    # MinIO
-    minio_endpoint: str = "localhost:9000"
-    minio_access_key: str = "minioadmin"
-    minio_secret_key: str = "minioadmin"
-    minio_bucket: str = "contratos"
-    minio_secure: bool = False
+    # Almacenamiento de archivos (volumen en disco)
+    storage_dir: str = "/data/contratos"
 
     # xAI / Grok
     xai_api_key: str = ""

@@ -27,7 +27,7 @@ Decisiones: contratos **digitales y escaneados** (requiere OCR) · auth de
 | Base de datos | PostgreSQL 16 | |
 | Búsqueda semántica | **pgvector** | Extensión de Postgres: reemplaza Azure AI Search sin sumar servicio |
 | Embeddings | **`bge-m3` local** (`sentence-transformers`) | xAI **no ofrece embeddings**: se resuelve local. Fuerte en español y sin costo por token |
-| Archivos | MinIO (S3-compatible) | Los PDFs originales no van en la BD |
+| Archivos | Volumen en disco | Los PDFs originales no van en la BD. MinIO restringió sus imágenes en Docker Hub y quay.io; la interfaz de `storage.py` sigue siendo la de un almacén de objetos, así que volver a S3 es reescribir un archivo |
 
 ## 3. Ingesta de documentos
 
@@ -115,9 +115,9 @@ api        FastAPI
 worker     Celery
 db         Postgres 16 + pgvector
 redis      Broker de Celery
-minio      Storage de archivos
-langfuse   Trazas de LLM
 web        React (Vite)
+
+Los archivos viven en el volumen `archivos`, compartido entre api y worker.
 ```
 
 ## Pendientes de definir

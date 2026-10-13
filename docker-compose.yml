@@ -19,18 +19,6 @@ services:
     ports:
       - "6379:6379"
 
-  minio:
-    image: minio/minio
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
-    volumes:
-      - miniodata:/data
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-
   api:
     build: ./backend
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -38,14 +26,14 @@ services:
     volumes:
       - ./backend:/code
       - hfcache:/root/.cache/huggingface
+      # La API escribe el archivo al subirlo y el worker lo lee: mismo volumen.
+      - archivos:/data/contratos
     ports:
       - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
-      minio:
         condition: service_started
 
   worker:
@@ -55,10 +43,10 @@ services:
     volumes:
       - ./backend:/code
       - hfcache:/root/.cache/huggingface
+      - archivos:/data/contratos
     depends_on:
       - db
       - redis
-      - minio
 
   web:
     build: ./frontend
@@ -73,5 +61,5 @@ services:
 
 volumes:
   pgdata:
-  miniodata:
+  archivos:
   hfcache:
