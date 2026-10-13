@@ -9,7 +9,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /code
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir -e ".[dev,ml]"
+# Caché de BuildKit: la imagen sigue sin llevar la caché dentro, pero un
+# cambio en pyproject.toml ya no obliga a volver a bajar PyTorch (~2 GB).
+RUN --mount=type=cache,target=/root/.cache/pip pip install -e ".[dev,ml]"
 COPY . .
 
 EXPOSE 8000

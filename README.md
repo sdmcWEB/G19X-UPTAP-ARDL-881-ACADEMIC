@@ -21,13 +21,12 @@ Migraciones y carga inicial:
 
 ```bash
 docker compose exec api alembic upgrade head
-docker compose exec api alembic revision --autogenerate -m "esquema inicial"
-docker compose exec api alembic upgrade head
 docker compose exec -e ADMIN_PASSWORD='tu-password' api python scripts/seed.py
 ```
 
-> La primera migración (`0001_pgvector`) solo habilita la extensión `vector`;
-> las tablas se generan con `--autogenerate` a partir de `app/models.py`.
+> `0001_pgvector` habilita la extensión y `esquema_inicial` crea las tablas.
+> Para una migración nueva tras cambiar `app/models.py`:
+> `docker compose exec api alembic revision --autogenerate -m "..."`
 
 | Servicio | URL |
 |---|---|
@@ -36,6 +35,26 @@ docker compose exec -e ADMIN_PASSWORD='tu-password' api python scripts/seed.py
 
 El worker descarga el modelo de embeddings (~2 GB) en el primer análisis. Queda
 en el volumen `hfcache`, así que solo pasa una vez.
+
+## Prueba de humo
+
+Con la pila arriba, recorre salud → login → subida → pipeline → tablero:
+
+```bash
+ADMIN_PASSWORD='tu-password' ./scripts/smoke.sh ruta/al/contrato.pdf
+```
+
+Sin `XAI_API_KEY` el pipeline llega hasta el paso del modelo y falla ahí; todo
+lo anterior (extracción, OCR, segmentación, embeddings) sí se verifica.
+
+**Estado verificado al 13-oct-2026:** la pila levanta, las migraciones aplican
+las 7 tablas con la extensión `vector` 0.8.7, el seed carga 18 tipos de riesgo,
+y un PDF de 3 páginas produjo 18 cláusulas con sus coordenadas y 18 embeddings
+de 1024 dimensiones. La búsqueda por distancia coseno responde. El único paso
+sin ejercitar es la llamada a Grok.
+
+La primera corrida tarda ~2 min de más: el worker descarga `bge-m3` (~2 GB) al
+volumen `hfcache`. Después es inmediato.
 
 ## Tests
 
