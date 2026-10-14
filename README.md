@@ -56,6 +56,21 @@ sin ejercitar es la llamada a Grok.
 La primera corrida tarda ~2 min de más: el worker descarga `bge-m3` (~2 GB) al
 volumen `hfcache`. Después es inmediato.
 
+## Búsqueda semántica
+
+`GET /api/busqueda?q=...` vectoriza la consulta con el mismo modelo que las
+cláusulas y pgvector ordena por distancia coseno. Busca por significado:
+*"cómo se capacita al personal"* encuentra *"Capacitar administradores y
+personal jurídico"* sin compartir palabras.
+
+El filtrado usa dos cortes. Uno absoluto, y otro **relativo al mejor
+resultado**: dentro de un mismo contrato todas las cláusulas se parecen un poco
+entre sí, así que un umbral fijo devuelve el documento entero. Ambos están
+calibrados contra un solo documento — hay que reajustarlos con un corpus real.
+
+El modelo se precalienta en un hilo al arrancar la API; sin eso la primera
+búsqueda tardaba ~25 s en cargar bge-m3.
+
 ## Tests
 
 ```bash
@@ -222,7 +237,6 @@ cascarón blanco.
 
 ## Pendiente
 
-- [ ] Búsqueda semántica sobre cláusulas (pgvector ya está, falta exponerlo)
 - [ ] Exportar reporte de revisión a PDF
 - [ ] Langfuse para trazas del modelo
 - [ ] Set de evaluación etiquetado y métricas de precisión

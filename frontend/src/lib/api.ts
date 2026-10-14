@@ -1,4 +1,4 @@
-import type { Contrato, ContratoDetalle, Resumen } from "./tipos";
+import type { Contrato, ContratoDetalle, Resultados, Resumen } from "./tipos";
 
 const TOKEN_KEY = "riesgos.access_token";
 
@@ -54,6 +54,12 @@ export const api = {
   contratos: () => request<Contrato[]>("/contratos"),
 
   contrato: (id: string) => request<ContratoDetalle>(`/contratos/${id}`),
+
+  buscar: (q: string, contratoId?: string) => {
+    const params = new URLSearchParams({ q });
+    if (contratoId) params.set("contrato_id", contratoId);
+    return request<Resultados>(`/busqueda?${params}`);
+  },
 
   // El backend lee `dias=0` como "todo el histórico".
   dashboard: (dias: number | null) => request<Resumen>(`/dashboard?dias=${dias ?? 0}`),

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 
 import { token } from "../lib/api";
@@ -40,10 +40,16 @@ export function VisorContrato({ url, resaltados, paginaObjetivo }: Props) {
   const cajasDeEstaPagina = resaltados.filter((r) => r.page === pagina);
 
   // pdf.js no manda el header de auth por su cuenta: se le pasa explícito.
-  const fuente = {
-    url,
-    httpHeaders: { Authorization: `Bearer ${token.get() ?? ""}` },
-  };
+  //
+  // El useMemo no es una optimización: react-pdf compara `file` por
+  // referencia, así que un objeto nuevo en cada render le hace destruir y
+  // recargar el documento. Y al destruirlo revienta cualquier getPage en
+  // vuelo con "Cannot read properties of null (reading 'sendWithPromise')",
+  // que tumba el árbol de React y deja la pantalla en blanco.
+  const fuente = useMemo(
+    () => ({ url, httpHeaders: { Authorization: `Bearer ${token.get() ?? ""}` } }),
+    [url],
+  );
 
   if (error) {
     return (

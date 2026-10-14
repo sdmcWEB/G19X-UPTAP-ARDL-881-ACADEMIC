@@ -121,3 +121,22 @@ export const PERIODOS: { etiqueta: string; dias: number | null }[] = [
   { etiqueta: "1 año", dias: 365 },
   { etiqueta: "Todo", dias: null },
 ];
+
+// --- Búsqueda semántica ---
+
+export interface Coincidencia {
+  clausula_id: string;
+  clause_id: string;
+  encabezado: string | null;
+  fragmento: string;
+  pagina_inicio: number;
+  similitud: number; // 0-1
+  contrato_id: string;
+  nombre_archivo: string;
+}
+
+export interface Resultados {
+  consulta: string;
+  total: number;
+  coincidencias: Coincidencia[];
+}

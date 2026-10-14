@@ -5,6 +5,7 @@ import { token } from "../lib/api";
 const ENLACES = [
   { a: "/tablero", texto: "Tablero" },
   { a: "/contratos", texto: "Contratos" },
+  { a: "/busqueda", texto: "Búsqueda" },
 ];
 
 export function Layout() {

@@ -4,6 +4,11 @@
 __pycache__/
 *.py[cod]
 
+# Duplicados que genera iCloud al sincronizar el Escritorio ("archivo 2.py").
+# Sin esto se cuelan al repo y pytest los recoge como pruebas extra.
+* 2.*
+* [0-9].*
+
 # Node
 node_modules/
 dist/
