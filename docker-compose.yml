@@ -51,6 +51,9 @@ services:
   web:
     build: ./frontend
     command: npm run dev -- --host 0.0.0.0
+    environment:
+      # Dentro de la red de Compose la API es el servicio `api`, no localhost.
+      VITE_API_PROXY: http://api:8000
     volumes:
       - ./frontend:/app
       - /app/node_modules

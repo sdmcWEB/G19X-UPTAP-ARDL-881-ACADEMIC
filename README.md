@@ -9,52 +9,200 @@ verificarlo.
 
 ---
 
-## Cómo levantarlo
+## Puesta en marcha
+
+Guía completa para correr el sistema en una máquina nueva. Probada de principio
+a fin el 20-oct-2026.
+
+### Requisitos
+
+| Qué | Versión | Nota |
+|---|---|---|
+| Docker | 24 o superior | Docker Desktop, OrbStack o Colima. Es lo único indispensable |
+| Git | cualquiera | Para clonar |
+| Espacio en disco | ~8 GB | La imagen del backend pesa 3.7 GB (incluye PyTorch) y el modelo de embeddings otros 2 GB |
+| RAM libre | 6 GB | Postgres, Redis, API, worker y frontend a la vez |
+
+No hace falta instalar Python, Node, Postgres ni Tesseract: todo corre en
+contenedores.
+
+### Paso 1 — Clonar
+
+```bash
+git clone https://github.com/sdmcWEB/G19X-UPTAP-ARDL-881-ACADEMIC.git
+cd G19X-UPTAP-ARDL-881-ACADEMIC
+```
+
+### Paso 2 — Configurar el entorno
 
 ```bash
 cp .env.example .env
-# Pon tu XAI_API_KEY en .env y cambia SECRET_KEY
+```
+
+Abre `.env` y cambia dos valores:
+
+- `SECRET_KEY` — genera uno con `openssl rand -hex 32`. Firma los tokens de sesión.
+- `XAI_API_KEY` — tu llave de [console.x.ai](https://console.x.ai).
+
+**Sin la llave el sistema arranca igual.** Sube contratos, extrae el texto,
+aplica OCR, segmenta en cláusulas y genera los embeddings; solo falla en el paso
+del análisis, con un mensaje explícito en la ficha del contrato. Sirve para
+evaluar todo lo demás.
+
+### Paso 3 — Levantar
+
+```bash
 docker compose up -d --build
 ```
 
-Migraciones y carga inicial:
+La primera vez tarda entre 5 y 15 minutos: descarga las imágenes base y compila
+el backend con PyTorch. Las siguientes son de segundos.
+
+Comprueba que los cinco servicios estén arriba:
+
+```bash
+docker compose ps
+```
+
+### Paso 4 — Crear el esquema y los datos iniciales
 
 ```bash
 docker compose exec api alembic upgrade head
-docker compose exec -e ADMIN_PASSWORD='tu-password' api python scripts/seed.py
+docker compose exec -e ADMIN_PASSWORD='TuPassword123!' api python scripts/seed.py
 ```
 
-> `0001_pgvector` habilita la extensión y `esquema_inicial` crea las tablas.
-> Para una migración nueva tras cambiar `app/models.py`:
-> `docker compose exec api alembic revision --autogenerate -m "..."`
+Esto crea las 7 tablas, habilita la extensión `vector` y carga el catálogo con
+18 tipos de riesgo contractual más el usuario administrador
+(`admin@develop.com.mx` con la contraseña que acabas de poner).
+
+### Paso 5 — Entrar
 
 | Servicio | URL |
 |---|---|
-| API + docs | http://localhost:8000/docs |
-| Frontend | http://localhost:5173 |
+| Aplicación | http://localhost:5173 |
+| API y documentación interactiva | http://localhost:8000/docs |
 
-El worker descarga el modelo de embeddings (~2 GB) en el primer análisis. Queda
-en el volumen `hfcache`, así que solo pasa una vez.
+Inicia sesión con `admin@develop.com.mx` y tu contraseña.
 
-## Prueba de humo
+### Paso 6 — Probar que funciona
 
-Con la pila arriba, recorre salud → login → subida → pipeline → tablero:
+Sube un contrato en PDF desde **Contratos → Subir contrato**. La lista se
+actualiza sola mientras se procesa.
+
+**La primera subida tarda unos 3 minutos de más**: el worker descarga el modelo
+de embeddings `bge-m3` (~2 GB). Queda guardado en el volumen `hfcache` y las
+siguientes son inmediatas.
+
+Al terminar, abre el contrato: a la izquierda el documento original, a la
+derecha los hallazgos. Al hacer clic en uno, el visor salta a su página y
+resalta la cláusula exacta.
+
+También hay un recorrido automatizado:
 
 ```bash
-ADMIN_PASSWORD='tu-password' ./scripts/smoke.sh ruta/al/contrato.pdf
+ADMIN_PASSWORD='TuPassword123!' ./scripts/smoke.sh ruta/al/contrato.pdf
 ```
 
-Sin `XAI_API_KEY` el pipeline llega hasta el paso del modelo y falla ahí; todo
-lo anterior (extracción, OCR, segmentación, embeddings) sí se verifica.
+Recorre salud, login, subida, pipeline y tablero, e imprime el avance.
 
-**Estado verificado al 13-oct-2026:** la pila levanta, las migraciones aplican
-las 7 tablas con la extensión `vector` 0.8.7, el seed carga 18 tipos de riesgo,
-y un PDF de 3 páginas produjo 18 cláusulas con sus coordenadas y 18 embeddings
-de 1024 dimensiones. La búsqueda por distancia coseno responde. El único paso
-sin ejercitar es la llamada a Grok.
+---
 
-La primera corrida tarda ~2 min de más: el worker descarga `bge-m3` (~2 GB) al
-volumen `hfcache`. Después es inmediato.
+## Probarlo desde otro dispositivo
+
+Para que alguien más lo revise desde su laptop o su teléfono sin instalar nada,
+basta con que esté en la **misma red** que la máquina donde corre.
+
+### Paso 1 — Averiguar la IP de la máquina anfitriona
+
+```bash
+ipconfig getifaddr en0
+```
+
+En Linux: `hostname -I | awk '{print $1}'`. En Windows: `ipconfig` y busca
+"Dirección IPv4". Da algo como `192.168.1.12`.
+
+### Paso 2 — Abrirla desde el otro dispositivo
+
+```
+http://192.168.1.12:5173
+```
+
+Sustituye la IP por la tuya. No hace falta configurar nada más: el frontend ya
+escucha en todas las interfaces y reenvía las llamadas a la API por dentro, así
+que el otro dispositivo solo necesita ese puerto.
+
+### Si no carga
+
+1. **Firewall.** En macOS, Ajustes del Sistema → Red → Firewall: permite las
+   conexiones entrantes de Docker. En Windows, autoriza Docker Desktop en el
+   Firewall de Windows.
+2. **Red distinta.** Comprueba que ambos equipos estén en el mismo Wi-Fi. Muchas
+   redes de invitados aíslan los dispositivos entre sí y nunca van a verse.
+3. **Comprueba desde la anfitriona primero.** `curl http://TU_IP:5173/api/health`
+   debe responder `{"status":"ok"}`. Si falla ahí, el problema no es el otro
+   dispositivo.
+
+> Esto es para evaluación en red local. No expongas estos puertos a internet:
+> el sistema corre en modo desarrollo, sin HTTPS.
+
+---
+
+## Problemas conocidos
+
+**El llavero de macOS bloquea la descarga de imágenes.** Si `docker compose up`
+falla con `error getting credentials … Keychain Error` o se queda colgado sin
+avanzar, la credencial guardada de Docker Hub no autoriza al binario actual de
+`docker` (pasa al cambiar de Docker Desktop a OrbStack). Las imágenes del
+proyecto son públicas, así que la credencial no hace falta:
+
+```bash
+docker logout
+```
+
+**La primera búsqueda o el primer análisis tardan.** Es la carga del modelo de
+embeddings. La API lo precalienta al arrancar en segundo plano; el worker lo
+descarga en su primer contrato.
+
+**Un contrato se queda en "Analizando".** Revisa el log del worker:
+
+```bash
+docker compose logs worker --tail 50
+```
+
+**Empezar de cero.** Borra los volúmenes y repite desde el paso 3:
+
+```bash
+docker compose down -v
+```
+
+---
+
+## Detener
+
+```bash
+docker compose down
+```
+
+Los datos sobreviven en los volúmenes. Para borrarlos también, `docker compose down -v`.
+
+## Estado verificado
+
+Lo que se ha comprobado ejecutando, no suponiendo (20-oct-2026):
+
+- La pila completa levanta con `docker compose up`, los cinco servicios.
+- Las migraciones crean las 7 tablas con la extensión `vector` 0.8.7.
+- El seed carga 18 tipos de riesgo y el usuario administrador.
+- Un PDF de 3 páginas produjo 18 cláusulas con sus coordenadas y 18 embeddings
+  de 1024 dimensiones.
+- La búsqueda semántica responde y ordena por significado.
+- El visor renderiza el PDF y, al seleccionar un hallazgo, salta a su página y
+  resalta la cláusula correcta.
+- El acceso desde otro dispositivo de la red funciona: aplicación, proxy y
+  login real a través de la IP de la máquina anfitriona.
+- CI en verde: ruff, 42 pruebas, `tsc` y el build de ambas imágenes.
+
+**El único paso sin ejercitar es la llamada al modelo de Grok**, que necesita
+una `XAI_API_KEY` válida.
 
 ## Búsqueda semántica
 
@@ -86,19 +234,6 @@ cd backend && pip install -e ".[dev]" && pytest tests/ -q
 
 `sentence-transformers` vive en el extra `ml` porque arrastra PyTorch (~2 GB) y
 solo el worker lo usa. El Dockerfile instala `.[dev,ml]`; CI instala `.[dev]`.
-
-## Problema conocido: el llavero de macOS bloquea los pulls
-
-Si `docker compose up` falla con `error getting credentials … Keychain Error` o
-se queda colgado sin avanzar, macOS está mostrando un diálogo de acceso al
-llavero que nadie contesta. El ítem guardado de Docker Hub no autoriza al
-binario actual de `docker` (pasa al cambiar de Docker Desktop a OrbStack).
-
-Las imágenes del proyecto son públicas, así que la credencial no hace falta:
-
-```bash
-docker logout
-```
 
 ## Cómo funciona
 

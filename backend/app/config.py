@@ -8,6 +8,10 @@ class Settings(BaseSettings):
 
     # API
     secret_key: str = "dev-insecure"
+    # Orígenes permitidos, separados por coma. Con el proxy de Vite el
+    # navegador nunca llama a la API directo, así que esto solo hace falta si
+    # alguien expone la API por su cuenta.
+    cors_origins: str = "http://localhost:5173"
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
 
