@@ -11,6 +11,7 @@ así que el orden entre pruebas no importa y ninguna deja residuo.
 from __future__ import annotations
 
 import os
+import uuid
 
 import pytest
 from fastapi.testclient import TestClient
@@ -20,9 +21,9 @@ from sqlalchemy.orm import sessionmaker
 
 from app.config import settings
 from app.db import Base, get_db
-from app.enums import Role
+from app.enums import ContractStatus, Role, Severity, VerificationStatus
 from app.main import app
-from app.models import User
+from app.models import Clause, Contract, Finding, User
 from app.security import hash_password
 
 # Base aparte para no tocar los datos de desarrollo.
@@ -98,6 +99,11 @@ def client(conexion, tmp_path, monkeypatch):
     Celery desactivado: subir un contrato no debe disparar el worker."""
     monkeypatch.setattr(settings, "storage_dir", str(tmp_path / "archivos"))
 
+    # TestClient dispara el ciclo de vida de la app, que precalienta bge-m3.
+    # En las pruebas eso sería una descarga de 2 GB y una dependencia de red
+    # que no aporta nada: ninguna prueba de API vectoriza.
+    monkeypatch.setattr("app.ai.embeddings.embed", lambda textos: [[0.0] * 1024 for _ in textos])
+
     encoladas: list[str] = []
     monkeypatch.setattr(
         "app.routers.contracts.analizar_contrato.delay",
@@ -123,36 +129,100 @@ def client(conexion, tmp_path, monkeypatch):
     app.dependency_overrides.clear()
 
 
-def _usuario(db, email: str, role: Role, password: str = "Prueba123!", activo: bool = True):
-    u = User(
-        email=email,
-        nombre=email.split("@")[0],
-        password_hash=hash_password(password),
-        role=role,
-        activo=activo,
-    )
-    db.add(u)
-    db.commit()
-    return u
+@pytest.fixture
+def crear_usuario(db):
+    """Fábrica de usuarios. Es fixture y no función importable: importar entre
+    módulos de prueba depende de que el directorio esté en sys.path, y eso
+    cambia entre `pytest` y `python -m pytest`."""
+
+    def _crear(email: str, role: Role, password: str = "Prueba123!", activo: bool = True):
+        u = User(
+            email=email,
+            nombre=email.split("@")[0],
+            password_hash=hash_password(password),
+            role=role,
+            activo=activo,
+        )
+        db.add(u)
+        db.commit()
+        return u
+
+    return _crear
 
 
 @pytest.fixture
-def admin(db):
-    return _usuario(db, "admin@prueba.mx", Role.ADMIN)
+def admin(crear_usuario):
+    return crear_usuario("admin@prueba.mx", Role.ADMIN)
 
 
 @pytest.fixture
-def juridico(db):
-    return _usuario(db, "juridico@prueba.mx", Role.JURIDICO)
+def juridico(crear_usuario):
+    return crear_usuario("juridico@prueba.mx", Role.JURIDICO)
 
 
 @pytest.fixture
-def lector(db):
-    return _usuario(db, "lector@prueba.mx", Role.LECTOR)
+def lector(crear_usuario):
+    return crear_usuario("lector@prueba.mx", Role.LECTOR)
 
 
-def autenticar(client: TestClient, email: str, password: str = "Prueba123!") -> dict[str, str]:
-    """Devuelve la cabecera de autorización para ese usuario."""
-    r = client.post("/api/auth/login", data={"username": email, "password": password})
-    assert r.status_code == 200, r.text
-    return {"Authorization": f"Bearer {r.json()['access_token']}"}
+@pytest.fixture
+def autenticar(client):
+    """Devuelve la cabecera de autorización de ese usuario."""
+
+    def _autenticar(email: str, password: str = "Prueba123!") -> dict[str, str]:
+        r = client.post("/api/auth/login", data={"username": email, "password": password})
+        assert r.status_code == 200, r.text
+        return {"Authorization": f"Bearer {r.json()['access_token']}"}
+
+    return _autenticar
+
+
+@pytest.fixture
+def contrato_listo(db):
+    """Un contrato ya analizado, con una cláusula y un hallazgo verificado."""
+
+    def _crear(usuario, con_hallazgo: bool = True) -> Contract:
+        c = Contract(
+            nombre_archivo="analizado.pdf",
+            object_key=f"{uuid.uuid4()}/analizado.pdf",
+            mime_type="application/pdf",
+            paginas=4,
+            status=ContractStatus.LISTO,
+            puntuacion_riesgo=61.0,
+            subido_por_id=usuario.id,
+        )
+        db.add(c)
+        db.flush()
+
+        if con_hallazgo:
+            cl = Clause(
+                contrato_id=c.id,
+                clause_id="C-001",
+                orden=1,
+                encabezado="PRIMERA",
+                texto="El proveedor pagará una pena sin tope.",
+                pagina_inicio=2,
+                pagina_fin=2,
+                bboxes=[{"page": 2, "bbox": [10, 20, 300, 40]}],
+            )
+            db.add(cl)
+            db.flush()
+            db.add(
+                Finding(
+                    contrato_id=c.id,
+                    clausula_id=cl.id,
+                    tipo_codigo="PENALIZACION_DESPROPORCIONADA",
+                    severidad=Severity.ALTA,
+                    titulo="Pena sin tope",
+                    explicacion="No hay límite acumulable.",
+                    recomendacion="Negociar un tope.",
+                    cita_textual="una pena sin tope",
+                    verificacion=VerificationStatus.VERIFICADA,
+                    score_similitud=100.0,
+                    confianza_modelo=0.93,
+                )
+            )
+        db.commit()
+        return c
+
+    return _crear

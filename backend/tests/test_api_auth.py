@@ -4,8 +4,6 @@ Estaba escrito pero nunca probado: hasta aquí nadie había verificado que un
 lector no pueda hacer lo que solo le toca a un administrador.
 """
 
-from tests.conftest import autenticar
-
 
 def test_login_con_credenciales_correctas(client, admin):
     r = client.post(
@@ -36,11 +34,10 @@ def test_el_correo_no_distingue_mayusculas(client, admin):
     assert r.status_code == 200
 
 
-def test_un_usuario_inactivo_no_entra(client, db):
+def test_un_usuario_inactivo_no_entra(client, crear_usuario):
     from app.enums import Role
-    from tests.conftest import _usuario
 
-    _usuario(db, "baja@prueba.mx", Role.LECTOR, activo=False)
+    crear_usuario("baja@prueba.mx", Role.LECTOR, activo=False)
     r = client.post(
         "/api/auth/login", data={"username": "baja@prueba.mx", "password": "Prueba123!"}
     )
@@ -85,14 +82,14 @@ def test_refresh_entrega_un_token_nuevo(client, admin):
     )
 
 
-def test_un_token_de_acceso_no_sirve_para_refrescar(client, admin):
-    cabeceras = autenticar(client, "admin@prueba.mx")
+def test_un_token_de_acceso_no_sirve_para_refrescar(client, admin, autenticar):
+    cabeceras = autenticar("admin@prueba.mx")
     acceso = cabeceras["Authorization"].removeprefix("Bearer ")
     assert client.post("/api/auth/refresh", params={"refresh_token": acceso}).status_code == 401
 
 
-def test_yo_devuelve_al_usuario_autenticado(client, juridico):
-    r = client.get("/api/auth/yo", headers=autenticar(client, "juridico@prueba.mx"))
+def test_yo_devuelve_al_usuario_autenticado(client, juridico, autenticar):
+    r = client.get("/api/auth/yo", headers=autenticar("juridico@prueba.mx"))
     assert r.status_code == 200
     assert r.json()["email"] == "juridico@prueba.mx"
     assert r.json()["role"] == "juridico"
@@ -101,35 +98,35 @@ def test_yo_devuelve_al_usuario_autenticado(client, juridico):
 # --- Control de acceso por rol ---
 
 
-def test_solo_el_admin_crea_usuarios(client, admin):
+def test_solo_el_admin_crea_usuarios(client, admin, autenticar):
     r = client.post(
         "/api/auth/usuarios",
-        headers=autenticar(client, "admin@prueba.mx"),
+        headers=autenticar("admin@prueba.mx"),
         json={"email": "nuevo@prueba.mx", "nombre": "Nuevo", "password": "x" * 12},
     )
     assert r.status_code == 201
 
 
-def test_el_juridico_no_crea_usuarios(client, juridico):
+def test_el_juridico_no_crea_usuarios(client, juridico, autenticar):
     r = client.post(
         "/api/auth/usuarios",
-        headers=autenticar(client, "juridico@prueba.mx"),
+        headers=autenticar("juridico@prueba.mx"),
         json={"email": "nuevo@prueba.mx", "nombre": "Nuevo", "password": "x" * 12},
     )
     assert r.status_code == 403
 
 
-def test_el_lector_no_crea_usuarios(client, lector):
+def test_el_lector_no_crea_usuarios(client, lector, autenticar):
     r = client.post(
         "/api/auth/usuarios",
-        headers=autenticar(client, "lector@prueba.mx"),
+        headers=autenticar("lector@prueba.mx"),
         json={"email": "nuevo@prueba.mx", "nombre": "Nuevo", "password": "x" * 12},
     )
     assert r.status_code == 403
 
 
-def test_no_se_puede_repetir_un_correo(client, admin):
-    cabeceras = autenticar(client, "admin@prueba.mx")
+def test_no_se_puede_repetir_un_correo(client, admin, autenticar):
+    cabeceras = autenticar("admin@prueba.mx")
     datos = {"email": "repetido@prueba.mx", "nombre": "Uno", "password": "x" * 12}
     assert client.post("/api/auth/usuarios", headers=cabeceras, json=datos).status_code == 201
     assert client.post("/api/auth/usuarios", headers=cabeceras, json=datos).status_code == 409
