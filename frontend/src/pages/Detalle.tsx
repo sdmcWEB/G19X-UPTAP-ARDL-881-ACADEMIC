@@ -20,6 +20,10 @@ export function Detalle() {
       q.state.data && EN_PROCESO.includes(q.state.data.status) ? 3000 : false,
   });
 
+  const descargar = useMutation({
+    mutationFn: () => api.descargarReporte(id, contrato?.nombre_archivo ?? "contrato"),
+  });
+
   const reanalizar = useMutation({
     mutationFn: () => api.reanalizar(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["contrato", id] }),
@@ -56,14 +60,34 @@ export function Detalle() {
               ` · riesgo ${contrato.puntuacion_riesgo.toFixed(0)}/100`}
           </p>
         </div>
-        <button
-          onClick={() => reanalizar.mutate()}
-          disabled={reanalizar.isPending || EN_PROCESO.includes(contrato.status)}
-          className="rounded-lg border px-4 py-2 text-sm disabled:opacity-40"
-        >
-          Volver a analizar
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => descargar.mutate()}
+            disabled={descargar.isPending || contrato.status !== "listo"}
+            title={
+              contrato.status !== "listo"
+                ? "El reporte se genera cuando termina el análisis"
+                : undefined
+            }
+            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm text-white disabled:opacity-40"
+          >
+            {descargar.isPending ? "Generando…" : "Descargar reporte"}
+          </button>
+          <button
+            onClick={() => reanalizar.mutate()}
+            disabled={reanalizar.isPending || EN_PROCESO.includes(contrato.status)}
+            className="rounded-lg border px-4 py-2 text-sm disabled:opacity-40"
+          >
+            Volver a analizar
+          </button>
+        </div>
       </div>
+
+      {descargar.error && (
+        <p className="mt-3 rounded border border-red-200 bg-red-50 p-2 text-sm text-red-800">
+          {descargar.error.message}
+        </p>
+      )}
 
       {contrato.ocr_aplicado && (
         <p className="mt-3 rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900">

@@ -9,7 +9,8 @@ from app import storage
 from app.audit import registrar
 from app.db import get_db
 from app.deps import current_user, require_roles
-from app.models import Contract, ContractStatus, Role, User
+from app.models import Clause, Contract, ContractStatus, Role, User
+from app.reportes.pdf import construir_reporte
 from app.schemas import ContratoDetalle, ContratoOut
 from app.tasks import analizar_contrato
 
@@ -141,3 +142,69 @@ def reanalizar(
 
     analizar_contrato.delay(str(contrato_id))
     return contrato
+
+
+@router.get("/{contrato_id}/reporte.pdf")
+def reporte(
+    contrato_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    """Reporte de revisión en PDF: lo que el abogado se lleva."""
+    contrato = db.scalar(
+        select(Contract).where(Contract.id == contrato_id).options(selectinload(Contract.hallazgos))
+    )
+    if contrato is None:
+        raise HTTPException(status_code=404, detail="Contrato no encontrado")
+    if contrato.status != ContractStatus.LISTO:
+        raise HTTPException(
+            status_code=409,
+            detail="El contrato todavía no termina de analizarse",
+        )
+
+    # La página sale de la cláusula, no del hallazgo: es lo que permite al
+    # abogado ir al documento original.
+    paginas = dict(
+        db.execute(
+            select(Clause.id, Clause.pagina_inicio).where(Clause.contrato_id == contrato.id)
+        ).all()
+    )
+    clausulas = dict(
+        db.execute(
+            select(Clause.id, Clause.encabezado).where(Clause.contrato_id == contrato.id)
+        ).all()
+    )
+
+    pdf = construir_reporte(
+        {
+            "nombre_archivo": contrato.nombre_archivo,
+            "paginas": contrato.paginas,
+            "ocr_aplicado": contrato.ocr_aplicado,
+            "puntuacion_riesgo": contrato.puntuacion_riesgo,
+        },
+        [
+            {
+                "titulo": h.titulo,
+                "tipo_codigo": h.tipo_codigo,
+                "severidad": h.severidad,
+                "explicacion": h.explicacion,
+                "recomendacion": h.recomendacion,
+                "cita_textual": h.cita_textual,
+                "verificacion": h.verificacion,
+                "score_similitud": h.score_similitud,
+                "clausula": clausulas.get(h.clausula_id),
+                "pagina": paginas.get(h.clausula_id),
+            }
+            for h in contrato.hallazgos
+        ],
+    )
+
+    registrar(db, user, "descargar_reporte", "contrato", str(contrato_id))
+    db.commit()
+
+    nombre = contrato.nombre_archivo.rsplit(".", 1)[0]
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="Reporte - {nombre}.pdf"'},
+    )

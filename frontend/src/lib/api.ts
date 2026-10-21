@@ -83,4 +83,27 @@ export const api = {
     request<Contrato>(`/contratos/${id}/reanalizar`, { method: "POST" }),
 
   urlArchivo: (id: string) => `/api/contratos/${id}/archivo`,
+
+  /** Descarga el reporte en PDF. No puede ser un <a href> normal: el endpoint
+   *  exige el token y un enlace no manda cabeceras. */
+  async descargarReporte(id: string, nombreArchivo: string) {
+    const headers = new Headers();
+    const t = token.get();
+    if (t) headers.set("Authorization", `Bearer ${t}`);
+
+    const res = await fetch(`/api/contratos/${id}/reporte.pdf`, { headers });
+    if (!res.ok) {
+      const cuerpo = await res.json().catch(() => ({}));
+      throw new ApiError(res.status, cuerpo.detail ?? "No se pudo generar el reporte");
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Reporte - ${nombreArchivo.replace(/\.[^.]+$/, "")}.pdf`;
+    a.click();
+    // Sin esto el blob queda retenido en memoria hasta recargar la página.
+    URL.revokeObjectURL(url);
+  },
 };

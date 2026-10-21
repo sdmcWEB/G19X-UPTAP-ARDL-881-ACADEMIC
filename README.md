@@ -219,6 +219,22 @@ calibrados contra un solo documento — hay que reajustarlos con un corpus real.
 El modelo se precalienta en un hilo al arrancar la API; sin eso la primera
 búsqueda tardaba ~25 s en cargar bge-m3.
 
+## Reporte de revisión en PDF
+
+Desde la ficha de un contrato, **Descargar reporte** genera el documento que el
+abogado se lleva: resumen por severidad y cada hallazgo con su cláusula,
+página, cita, explicación y recomendación.
+
+La decisión de diseño que manda sobre el resto: **una cita que no se pudo
+confirmar se ve distinta en el papel**. Si en el documento impreso un hallazgo
+verificado y uno inventado se leen igual, el reporte traiciona el propósito del
+sistema. El encabezado dice cuántas citas quedaron sin confirmar y cada una
+lleva su sello.
+
+```
+GET /api/contratos/{id}/reporte.pdf
+```
+
 ## Evaluación de precisión
 
 El objetivo específico que sostiene la hipótesis del proyecto. Mide dos cosas:
@@ -393,6 +409,5 @@ cascarón blanco.
 
 ## Pendiente
 
-- [ ] Exportar reporte de revisión a PDF
 - [ ] Langfuse para trazas del modelo
 - [ ] Contratos etiquetados por el área jurídica (el arnés de medición ya está)
