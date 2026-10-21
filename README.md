@@ -219,6 +219,25 @@ calibrados contra un solo documento — hay que reajustarlos con un corpus real.
 El modelo se precalienta en un hilo al arrancar la API; sin eso la primera
 búsqueda tardaba ~25 s en cargar bge-m3.
 
+## Evaluación de precisión
+
+El objetivo específico que sostiene la hipótesis del proyecto. Mide dos cosas:
+
+- **Detección** — precisión, exhaustividad y F1 contra contratos que etiquetó
+  un abogado, con desglose por tipo de riesgo.
+- **Calidad de la evidencia** — de los hallazgos equivocados, qué proporción
+  trae el verificador marcada. Es la métrica central: un falso positivo con
+  cita impecable es justo lo que este sistema existe para evitar.
+
+```bash
+docker compose exec api python scripts/evaluar.py
+```
+
+El formato de etiquetado y el flujo para el área jurídica están en
+[`backend/evaluacion/README.md`](backend/evaluacion/README.md). Hace falta que
+PluriOne entregue los contratos etiquetados; el arnés ya está listo para
+recibirlos.
+
 ## Tests
 
 ```bash
@@ -299,6 +318,8 @@ backend/
       embeddings.py      bge-m3 local
   seeds/risk_types.json  Catálogo inicial de 18 tipos de riesgo
   scripts/seed.py        Admin + catálogo (idempotente)
+  scripts/evaluar.py     Reporte de precisión contra contratos etiquetados
+  evaluacion/            Formato de etiquetado y guía para el área jurídica
   tests/                 Verificador y segmentador
 
 frontend/
@@ -374,4 +395,4 @@ cascarón blanco.
 
 - [ ] Exportar reporte de revisión a PDF
 - [ ] Langfuse para trazas del modelo
-- [ ] Set de evaluación etiquetado y métricas de precisión
+- [ ] Contratos etiquetados por el área jurídica (el arnés de medición ya está)

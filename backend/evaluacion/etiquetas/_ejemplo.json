@@ -1,0 +1,18 @@
+{
+  "archivo": "Contrato_Servicios_TI_Acme_2026.pdf",
+  "etiquetado_por": "Nombre del abogado que revisó",
+  "fecha": "2026-10-20",
+  "notas": "Archivo de ejemplo. El guion bajo del nombre hace que el evaluador lo ignore; quítalo para que cuente.",
+  "hallazgos_esperados": [
+    {
+      "clausula": "C-014",
+      "tipo_codigo": "PENALIZACION_DESPROPORCIONADA",
+      "nota": "Pena del 5% diario sin tope acumulable."
+    },
+    {
+      "clausula": "C-021",
+      "tipo_codigo": "RESPONSABILIDAD_ILIMITADA",
+      "nota": "No hay límite de responsabilidad y abarca daños indirectos."
+    }
+  ]
+}
