@@ -7,11 +7,13 @@ Analiza contratos con IA para identificar cláusulas de riesgo, y **ancla cada
 hallazgo a su ubicación exacta en el documento** para que el área jurídica pueda
 verificarlo.
 
+En adelante, **PIRC**.
+
 ---
 
 ## Puesta en marcha
 
-Guía completa para correr el sistema en una máquina nueva. Probada de principio
+Guía completa para correr PIRC en una máquina nueva. Probada de principio
 a fin el 20-oct-2026.
 
 ### Requisitos
@@ -44,7 +46,7 @@ Abre `.env` y cambia dos valores:
 - `SECRET_KEY` — genera uno con `openssl rand -hex 32`. Firma los tokens de sesión.
 - `XAI_API_KEY` — tu llave de [console.x.ai](https://console.x.ai).
 
-**Sin la llave el sistema arranca igual.** Sube contratos, extrae el texto,
+**Sin la llave PIRC arranca igual.** Sube contratos, extrae el texto,
 aplica OCR, segmenta en cláusulas y genera los embeddings; solo falla en el paso
 del análisis, con un mensaje explícito en la ficha del contrato. Sirve para
 evaluar todo lo demás.
@@ -107,7 +109,7 @@ Recorre salud, login, subida, pipeline y tablero, e imprime el avance.
 
 ---
 
-## Probarlo desde otro dispositivo
+## Probar PIRC desde otro dispositivo
 
 Para que alguien más lo revise desde su laptop o su teléfono sin instalar nada,
 basta con que esté en la **misma red** que la máquina donde corre.

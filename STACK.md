@@ -1,6 +1,6 @@
 # Stack tecnológico — Proyecto 038
 
-**Plataforma de Identificación de Riesgos Contractuales mediante IA**
+**Plataforma de Identificación de Riesgos Contractuales mediante IA** (**PIRC**)
 Empresa: PluriOne S.A. de C.V. / Develop Talent & Technology · 480 h de estadía
 
 Decisiones: contratos **digitales y escaneados** (requiere OCR) · auth de
