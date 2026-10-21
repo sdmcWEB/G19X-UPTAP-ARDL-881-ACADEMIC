@@ -19,6 +19,26 @@ jobs:
       run:
         working-directory: backend
 
+    # Las pruebas de la API corren contra Postgres real: los modelos usan
+    # tipos del dialecto de Postgres y pgvector, así que SQLite no sirve.
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: riesgos
+          POSTGRES_PASSWORD: riesgos
+          POSTGRES_DB: riesgos
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U riesgos"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://riesgos:riesgos@localhost:5432/riesgos_test
+
     steps:
       - uses: actions/checkout@v4
 
@@ -39,6 +59,8 @@ jobs:
         run: ruff format --check app tests scripts alembic
 
       - name: Tests
+        # -p no:randomly no hace falta; las pruebas son independientes porque
+        # cada una corre dentro de una transacción que se revierte.
         run: pytest tests/ -q
 
   frontend:

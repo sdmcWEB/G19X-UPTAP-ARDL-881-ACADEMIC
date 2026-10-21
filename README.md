@@ -199,7 +199,7 @@ Lo que se ha comprobado ejecutando, no suponiendo (20-oct-2026):
   resalta la cláusula correcta.
 - El acceso desde otro dispositivo de la red funciona: aplicación, proxy y
   login real a través de la IP de la máquina anfitriona.
-- CI en verde: ruff, 42 pruebas, `tsc` y el build de ambas imágenes.
+- CI en verde: ruff, 130 pruebas, `tsc` y el build de ambas imágenes.
 
 **El único paso sin ejercitar es la llamada al modelo de Grok**, que necesita
 una `XAI_API_KEY` válida.
@@ -260,15 +260,30 @@ recibirlos.
 docker compose exec api python -m pytest tests/ -q
 ```
 
-Sin Docker, los tests solo necesitan el set base más `dev` — ni PyTorch ni base
-de datos:
+Dos clases de prueba:
+
+- **Lógica pura** — verificador de citas, segmentador, almacén, métricas y
+  generación del PDF. No necesitan base de datos.
+- **API** — autenticación, control de acceso por rol, validación de subidas y
+  los endpoints del tablero. Corren contra **Postgres real**, no SQLite: los
+  modelos usan tipos del dialecto de Postgres y pgvector, y una prueba sobre
+  otro motor verifica un sistema que no existe.
+
+Cada prueba de API se ejecuta dentro de una transacción que se revierte al
+terminar, y cada petición abre su propia sesión igual que en producción. Sin
+eso, una sola sesión compartida deja objetos en el mapa de identidad y la
+prueba ve datos que ya se borraron.
+
+Sin Docker, las de lógica pura corren solas y las de API se saltan con un
+mensaje explícito:
 
 ```bash
 cd backend && pip install -e ".[dev]" && pytest tests/ -q
 ```
 
 `sentence-transformers` vive en el extra `ml` porque arrastra PyTorch (~2 GB) y
-solo el worker lo usa. El Dockerfile instala `.[dev,ml]`; CI instala `.[dev]`.
+solo el worker lo usa. El Dockerfile instala `.[dev,ml]`; CI instala `.[dev]`
+y levanta un Postgres con pgvector para las pruebas de API.
 
 ## Cómo funciona
 
