@@ -2,20 +2,32 @@ from datetime import UTC, datetime, timedelta
 from typing import Literal
 
 import jwt
-from passlib.context import CryptContext
+from pwdlib import PasswordHash
+from pwdlib.hashers.argon2 import Argon2Hasher
 
 from app.config import settings
 
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+# pwdlib en lugar de passlib: passlib importa el módulo `crypt`, eliminado de
+# la biblioteca estándar en Python 3.13, y lleva años sin publicar versión.
+# El formato PHC de argon2 es el mismo, así que los hashes ya guardados siguen
+# verificándose sin migrar ninguna contraseña.
+_hasher = PasswordHash((Argon2Hasher(),))
 ALGORITHM = "HS256"
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return _hasher.hash(password)
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    """False ante un hash corrupto, nunca una excepción.
+
+    Un registro dañado en la base debe impedir ese login, no tumbar el
+    endpoint para todos."""
+    try:
+        return _hasher.verify(plain, hashed)
+    except Exception:
+        return False
 
 
 def create_token(subject: str, kind: Literal["access", "refresh"] = "access") -> str:

@@ -1,8 +1,14 @@
-import type { TooltipProps } from "recharts";
+// En Recharts 3 el contenido personalizado recibe TooltipContentProps;
+// TooltipProps pasó a ser el tipo del componente <Tooltip>, sin payload.
+import type { TooltipContentProps } from "recharts";
 
 /** Tooltip compartido. Los valores viajan en ink de texto, no en el color de
  *  la serie: la identidad la carga el punto de color a su lado. */
-export function VizTooltip({ active, payload, label }: TooltipProps<number, string>) {
+export function VizTooltip({
+  active,
+  payload,
+  label,
+}: Partial<TooltipContentProps<number, string>>) {
   if (!active || !payload?.length) return null;
 
   return (

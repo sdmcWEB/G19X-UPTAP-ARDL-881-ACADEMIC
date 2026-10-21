@@ -199,7 +199,7 @@ Lo que se ha comprobado ejecutando, no suponiendo (20-oct-2026):
   resalta la cláusula correcta.
 - El acceso desde otro dispositivo de la red funciona: aplicación, proxy y
   login real a través de la IP de la máquina anfitriona.
-- CI en verde: ruff, 130 pruebas, `tsc` y el build de ambas imágenes.
+- CI en verde: ruff, 144 pruebas, `tsc` y el build de ambas imágenes.
 
 **El único paso sin ejercitar es la llamada al modelo de Grok**, que necesita
 una `XAI_API_KEY` válida.
