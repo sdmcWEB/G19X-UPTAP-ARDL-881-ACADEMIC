@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import Field, ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -7,7 +8,12 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # API
-    secret_key: str = "dev-insecure"
+    #
+    # Sin valor por defecto a propósito: firma los tokens de sesión, y uno
+    # predecible deja que cualquiera se fabrique un token de administrador.
+    # El largo mínimo es el de `openssl rand -hex 32`; una llave corta no
+    # protege más que ninguna.
+    secret_key: str = Field(min_length=32)
     # Orígenes permitidos, separados por coma. Con el proxy de Vite el
     # navegador nunca llama a la API directo, así que esto solo hace falta si
     # alguien expone la API por su cuenta.
@@ -39,7 +45,16 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    try:
+        return Settings()
+    except ValidationError as exc:
+        if any(e["loc"] == ("secret_key",) for e in exc.errors()):
+            raise RuntimeError(
+                "Falta SECRET_KEY, o es demasiado corta (mínimo 32 caracteres).\n"
+                "Genera una con:  openssl rand -hex 32\n"
+                "y ponla en .env antes de arrancar."
+            ) from exc
+        raise
 
 
 settings = get_settings()
