@@ -58,6 +58,11 @@ def engine():
         motor = create_engine(URL_PRUEBAS)
         with motor.begin() as conn:
             conn.execute(text("create extension if not exists vector"))
+        # Se recrea desde cero en cada corrida: `create_all` no altera tablas
+        # que ya existen, así que una base de pruebas vieja seguiría sin las
+        # columnas de una migración reciente y las pruebas fallarían por el
+        # esquema, no por el código.
+        Base.metadata.drop_all(motor)
         Base.metadata.create_all(motor)
     except OperationalError:
         pytest.skip(SIN_BASE, allow_module_level=True)

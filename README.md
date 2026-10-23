@@ -41,9 +41,16 @@ cd G19X-UPTAP-ARDL-881-ACADEMIC
 cp .env.example .env
 ```
 
-Abre `.env` y cambia dos valores:
+Abre `.env` y llena dos valores:
 
-- `SECRET_KEY` — genera uno con `openssl rand -hex 32`. Firma los tokens de sesión.
+- `SECRET_KEY` — **obligatoria**, la API no arranca sin ella. Genérala con:
+
+  ```bash
+  openssl rand -hex 32
+  ```
+
+  Firma los tokens de sesión: una llave predecible deja que cualquiera se
+  fabrique un token de administrador.
 - `XAI_API_KEY` — tu llave de [console.x.ai](https://console.x.ai).
 
 **Sin la llave PIRC arranca igual.** Sube contratos, extrae el texto,
@@ -201,7 +208,7 @@ Lo que se ha comprobado ejecutando, no suponiendo (20-oct-2026):
   resalta la cláusula correcta.
 - El acceso desde otro dispositivo de la red funciona: aplicación, proxy y
   login real a través de la IP de la máquina anfitriona.
-- CI en verde: ruff, 144 pruebas, `tsc` y el build de ambas imágenes.
+- CI en verde: ruff, 163 pruebas, `tsc` y el build de ambas imágenes.
 
 **El único paso sin ejercitar es la llamada al modelo de Grok**, que necesita
 una `XAI_API_KEY` válida.
@@ -220,6 +227,26 @@ calibrados contra un solo documento — hay que reajustarlos con un corpus real.
 
 El modelo se precalienta en un hilo al arrancar la API; sin eso la primera
 búsqueda tardaba ~25 s en cargar bge-m3.
+
+## Revisión humana de hallazgos
+
+El sistema propone; el abogado dispone. Cada hallazgo nace **pendiente** y se
+confirma o se descarta desde el panel del contrato:
+
+```
+PATCH /api/hallazgos/{id}   { "revision": "confirmado" | "descartado" | "pendiente",
+                              "comentario": "…" }
+```
+
+**Descartar exige motivo.** Sin él, quien revise después no sabe si el riesgo
+no aplicaba o si alguien lo cerró por error. Confirmar no lo exige: el hallazgo
+ya trae su explicación y su cita.
+
+Queda registrado quién dictaminó y cuándo, y el dictamen aparece en el reporte
+PDF. Volver un hallazgo a pendiente borra esa firma: deshacer no puede dejar
+firmado a quien se arrepintió.
+
+Solo `admin` y `juridico` dictaminan; `lector` consulta.
 
 ## Reporte de revisión en PDF
 
@@ -328,17 +355,24 @@ verificado nunca se le presenta al abogado como evidencia.
 ```
 backend/
   app/
-    config.py            Settings (pydantic-settings)
+    config.py            Settings (pydantic-settings); SECRET_KEY es obligatoria
     db.py                Engine perezoso + sesiones
     enums.py             Enums del dominio, sin dependencias de ORM
     models.py            SQLAlchemy 2.0
     schemas.py           Schemas HTTP
-    security.py          JWT + argon2
+    security.py          JWT + argon2 (pwdlib)
     deps.py              Auth y autorización por rol
     storage.py           Archivos en volumen, con la interfaz de un almacén de objetos
     audit.py             Registro de auditoría
+    celery_app.py        Configuración de la cola
     tasks.py             Pipeline Celery
-    routers/             auth · contratos · hallazgos
+    main.py              App FastAPI; precalienta el modelo de embeddings al arrancar
+    routers/
+      auth.py            Login, refresh, alta de usuarios
+      contracts.py       Subida, consulta, archivo original, reanálisis y reporte PDF
+      findings.py        Consulta y dictamen de hallazgos
+      dashboard.py       Agregados del tablero
+      search.py          Búsqueda semántica sobre cláusulas
     ingest/
       documento.py       Block / Documento (datos puros)
       extract.py         PyMuPDF + OCRmyPDF
@@ -348,15 +382,23 @@ backend/
       schemas.py         Schema de salida del modelo
       analyze.py         Prompt, lotes y puntuación de riesgo
       verify.py          Verificación de citas
-      embeddings.py      bge-m3 local
+      embeddings.py      bge-m3 local (extra `ml`)
+    evaluacion/
+      metricas.py        Detección y calidad de la evidencia
+    reportes/
+      pdf.py             Reporte de revisión que descarga el abogado
+  alembic/versions/      Migraciones
   seeds/risk_types.json  Catálogo inicial de 18 tipos de riesgo
-  scripts/seed.py        Admin + catálogo (idempotente)
-  scripts/evaluar.py     Reporte de precisión contra contratos etiquetados
+  scripts/
+    seed.py              Admin + catálogo (idempotente)
+    evaluar.py           Reporte de precisión contra contratos etiquetados
   evaluacion/            Formato de etiquetado y guía para el área jurídica
-  tests/                 Verificador y segmentador
+  tests/                 12 archivos: lógica pura y pruebas de API contra Postgres
 
 frontend/
   src/
+    main.tsx             Punto de entrada; providers de React Query y router
+    App.tsx              Rutas y guarda de sesión
     lib/api.ts           Cliente HTTP
     lib/tipos.ts         Tipos compartidos
     components/
@@ -365,7 +407,14 @@ frontend/
       PanelHallazgos.tsx Lista, filtro y estado de cita
       viz/               Tarjeta con gemela en tabla, tooltip, stat tile,
                          medidor y las cuatro gráficas del tablero
-    pages/               Login · Dashboard · Contratos · Detalle
+    pages/
+      Login.tsx
+      Dashboard.tsx      Tablero de riesgo
+      Contratos.tsx      Lista y subida
+      Detalle.tsx        Visor, hallazgos y descarga del reporte
+      Busqueda.tsx       Búsqueda semántica
+
+scripts/smoke.sh         Recorrido de punta a punta contra la pila levantada
 ```
 
 ## El tablero

@@ -3,9 +3,9 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
-from app.models import ContractStatus, Role, Severity, VerificationStatus
+from app.models import ContractStatus, ReviewStatus, Role, Severity, VerificationStatus
 
 
 class Token(BaseModel):
@@ -58,6 +58,35 @@ class HallazgoOut(BaseModel):
     verificacion: VerificationStatus
     score_similitud: float | None
     confianza_modelo: float | None
+
+    # Dictamen del abogado
+    revision: ReviewStatus
+    comentario_revision: str | None
+    revisado_at: datetime | None
+    revisado_por: str | None = None
+
+    @field_validator("revisado_por", mode="before")
+    @classmethod
+    def _nombre_del_revisor(cls, v):
+        """El cliente necesita el nombre, no el objeto usuario completo."""
+        return v.nombre if hasattr(v, "nombre") else v
+
+
+class RevisionIn(BaseModel):
+    """Lo que manda el abogado al confirmar o descartar."""
+
+    revision: ReviewStatus
+    comentario: str | None = Field(None, max_length=2000)
+
+    @model_validator(mode="after")
+    def _descartar_exige_motivo(self):
+        """Descartar sin decir por qué deja al siguiente revisor sin nada.
+
+        Confirmar no lo exige: el hallazgo ya trae su explicación y su cita.
+        """
+        if self.revision == ReviewStatus.DESCARTADO and not (self.comentario or "").strip():
+            raise ValueError("Para descartar un hallazgo hay que indicar el motivo")
+        return self
 
 
 class ContratoOut(BaseModel):

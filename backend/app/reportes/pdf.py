@@ -29,7 +29,7 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from app.enums import Severity, VerificationStatus
+from app.enums import ReviewStatus, Severity, VerificationStatus
 
 TINTA = colors.HexColor("#0b0b0b")
 TENUE = colors.HexColor("#52514e")
@@ -64,6 +64,18 @@ ETIQUETA_VERIFICACION = {
     VerificationStatus.VERIFICADA: "Cita verificada contra el documento",
     VerificationStatus.APROXIMADA: "Cita aproximada — revisar contra el original",
     VerificationStatus.NO_VERIFICADA: "CITA NO VERIFICADA — no usar como evidencia",
+}
+
+ETIQUETA_REVISION = {
+    ReviewStatus.CONFIRMADO: "Confirmado por",
+    ReviewStatus.DESCARTADO: "Descartado por",
+    ReviewStatus.PENDIENTE: "Sin revisar",
+}
+
+COLOR_REVISION = {
+    ReviewStatus.CONFIRMADO: colors.HexColor("#0ca30c"),
+    ReviewStatus.DESCARTADO: APAGADO,
+    ReviewStatus.PENDIENTE: colors.HexColor("#b07c0a"),
 }
 
 COLOR_VERIFICACION = {
@@ -238,6 +250,26 @@ def _bloque_hallazgo(h: dict[str, Any], n: int, st: dict, ultimo: bool) -> KeepT
     partes.append(Spacer(1, 6))
 
     partes.append(Paragraph(f"<b>Recomendación:</b> {_escapar(h['recomendacion'])}", st["cuerpo"]))
+
+    # El dictamen cierra el hallazgo: es la última palabra, y la humana.
+    revision = h.get("revision", ReviewStatus.PENDIENTE)
+    sello_revision = ETIQUETA_REVISION[revision]
+    if revision != ReviewStatus.PENDIENTE and h.get("revisado_por"):
+        sello_revision += f" {h['revisado_por']}"
+        if h.get("revisado_at"):
+            sello_revision += f" el {h['revisado_at'].strftime('%d/%m/%Y')}"
+    if h.get("comentario_revision"):
+        sello_revision += f" — {h['comentario_revision']}"
+
+    partes.append(Spacer(1, 4))
+    partes.append(
+        Paragraph(
+            f'<font color="#{COLOR_REVISION[revision].hexval()[2:]}">'
+            f"<b>{_escapar(sello_revision)}</b></font>",
+            st["tenue"],
+        )
+    )
+
     if not ultimo:
         partes.append(Spacer(1, 10))
         partes.append(HRFlowable(width="100%", thickness=0.4, color=LINEA, spaceAfter=10))
@@ -292,6 +324,9 @@ def construir_reporte(contrato: dict[str, Any], hallazgos: list[dict[str, Any]])
     no_verificados = sum(
         1 for h in hallazgos if h["verificacion"] == VerificationStatus.NO_VERIFICADA
     )
+    sin_revisar = sum(
+        1 for h in hallazgos if h.get("revision", ReviewStatus.PENDIENTE) == ReviewStatus.PENDIENTE
+    )
 
     flujo.append(Paragraph("Resumen", st["seccion"]))
     if hallazgos:
@@ -311,6 +346,21 @@ def construir_reporte(contrato: dict[str, Any], hallazgos: list[dict[str, Any]])
             st["cuerpo"],
         )
     )
+
+    if hallazgos:
+        flujo.append(Spacer(1, 6))
+        flujo.append(
+            Paragraph(
+                (
+                    f"<b>{sin_revisar} de {len(hallazgos)} hallazgos siguen sin revisión "
+                    "humana</b> y aparecen marcados como tales."
+                    if sin_revisar
+                    else "Todos los hallazgos de este reporte fueron revisados por el área "
+                    "jurídica."
+                ),
+                st["cuerpo"],
+            )
+        )
 
     flujo.append(Paragraph("Hallazgos", st["seccion"]))
 

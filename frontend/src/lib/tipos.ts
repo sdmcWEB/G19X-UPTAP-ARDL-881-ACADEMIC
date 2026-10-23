@@ -1,5 +1,6 @@
 export type Severidad = "critica" | "alta" | "media" | "baja" | "informativa";
 export type Verificacion = "verificada" | "aproximada" | "no_verificada";
+export type Revision = "pendiente" | "confirmado" | "descartado";
 export type EstadoContrato =
   | "recibido"
   | "extrayendo"
@@ -35,6 +36,11 @@ export interface Hallazgo {
   verificacion: Verificacion;
   score_similitud: number | null;
   confianza_modelo: number | null;
+
+  revision: Revision;
+  comentario_revision: string | null;
+  revisado_at: string | null;
+  revisado_por: string | null;
 }
 
 export interface Contrato {
@@ -69,6 +75,12 @@ export const ETIQUETA_SEVERIDAD: Record<Severidad, string> = {
   media: "Media",
   baja: "Baja",
   informativa: "Informativa",
+};
+
+export const ETIQUETA_REVISION: Record<Revision, string> = {
+  pendiente: "Sin revisar",
+  confirmado: "Confirmado",
+  descartado: "Descartado",
 };
 
 export const ETIQUETA_VERIFICACION: Record<Verificacion, string> = {

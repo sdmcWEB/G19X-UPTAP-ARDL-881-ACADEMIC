@@ -1,4 +1,11 @@
-import type { Contrato, ContratoDetalle, Resultados, Resumen } from "./tipos";
+import type {
+  Contrato,
+  ContratoDetalle,
+  Hallazgo,
+  Resultados,
+  Resumen,
+  Revision,
+} from "./tipos";
 
 const TOKEN_KEY = "riesgos.access_token";
 
@@ -78,6 +85,13 @@ export const api = {
     }
     return (await res.json()) as Contrato;
   },
+
+  dictaminar: (hallazgoId: string, revision: Revision, comentario?: string) =>
+    request<Hallazgo>(`/hallazgos/${hallazgoId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ revision, comentario: comentario || null }),
+    }),
 
   reanalizar: (id: string) =>
     request<Contrato>(`/contratos/${id}/reanalizar`, { method: "POST" }),

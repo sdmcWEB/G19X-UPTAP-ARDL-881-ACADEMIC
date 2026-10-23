@@ -36,3 +36,17 @@ class VerificationStatus(StrEnum):
     VERIFICADA = "verificada"  # la cita existe textualmente en la cláusula
     APROXIMADA = "aproximada"  # coincidencia parcial, revisar
     NO_VERIFICADA = "no_verificada"  # no se encontró: posible alucinación
+
+
+class ReviewStatus(StrEnum):
+    """Dictamen del abogado sobre un hallazgo.
+
+    Separado de `VerificationStatus`: aquel dice si la *cita* existe en el
+    documento, esto dice si el *riesgo* es real. Un hallazgo puede tener la
+    cita perfectamente verificada y aun así ser descartado porque en ese
+    contrato esa cláusula no representa un problema.
+    """
+
+    PENDIENTE = "pendiente"
+    CONFIRMADO = "confirmado"
+    DESCARTADO = "descartado"

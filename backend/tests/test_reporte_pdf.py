@@ -8,7 +8,7 @@ que debe decir.
 import fitz
 import pytest
 
-from app.enums import Severity, VerificationStatus
+from app.enums import ReviewStatus, Severity, VerificationStatus
 from app.reportes.pdf import construir_reporte
 
 CONTRATO = {
@@ -31,6 +31,10 @@ def hallazgo(**cambios):
         "score_similitud": 100.0,
         "clausula": "DÉCIMA PRIMERA",
         "pagina": 7,
+        "revision": ReviewStatus.PENDIENTE,
+        "comentario_revision": None,
+        "revisado_por": None,
+        "revisado_at": None,
     }
     return {**base, **cambios}
 
@@ -161,3 +165,66 @@ def test_la_cláusula_se_nombra_como_tal():
 def test_un_hallazgo_sin_cláusula_lo_dice():
     t = texto_de(construir_reporte(CONTRATO, [hallazgo(clausula=None, pagina=None)]))
     assert "Sin cláusula asociada" in t
+
+
+# --- Dictamen del abogado ---
+
+
+def test_un_hallazgo_confirmado_lleva_quién_y_cuándo():
+    from datetime import datetime
+
+    from app.enums import ReviewStatus
+
+    t = texto_de(
+        construir_reporte(
+            CONTRATO,
+            [
+                hallazgo(
+                    revision=ReviewStatus.CONFIRMADO,
+                    revisado_por="Lic. Hannia Nájera",
+                    revisado_at=datetime(2026, 10, 23, 11, 30),
+                    comentario_revision="Hay que negociar el tope antes de firmar.",
+                )
+            ],
+        )
+    )
+    assert "Confirmado por Lic. Hannia Nájera el 23/10/2026" in t
+    assert "Hay que negociar el tope" in t
+
+
+def test_un_hallazgo_descartado_dice_el_motivo():
+    from app.enums import ReviewStatus
+
+    t = texto_de(
+        construir_reporte(
+            CONTRATO,
+            [
+                hallazgo(
+                    revision=ReviewStatus.DESCARTADO,
+                    revisado_por="Lic. Hannia Nájera",
+                    comentario_revision="El anexo B ya acota la pena.",
+                )
+            ],
+        )
+    )
+    assert "Descartado por" in t
+    assert "El anexo B ya acota la pena" in t
+
+
+def test_lo_no_revisado_se_marca_como_tal():
+    """Un hallazgo sin revisar no puede leerse como si alguien lo respaldara."""
+    t = texto_de(construir_reporte(CONTRATO, [hallazgo()]))
+    assert "Sin revisar" in t
+    assert "1 de 1 hallazgos siguen sin revisión humana" in t
+
+
+def test_cuando_todo_está_revisado_lo_dice():
+    from app.enums import ReviewStatus
+
+    t = texto_de(
+        construir_reporte(
+            CONTRATO,
+            [hallazgo(revision=ReviewStatus.CONFIRMADO, revisado_por="Ana")],
+        )
+    )
+    assert "Todos los hallazgos de este reporte fueron revisados" in t

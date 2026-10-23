@@ -9,7 +9,7 @@ from app import storage
 from app.audit import registrar
 from app.db import get_db
 from app.deps import current_user, require_roles
-from app.models import Clause, Contract, ContractStatus, Role, User
+from app.models import Clause, Contract, ContractStatus, Finding, Role, User
 from app.reportes.pdf import construir_reporte
 from app.schemas import ContratoDetalle, ContratoOut
 from app.tasks import analizar_contrato
@@ -152,7 +152,9 @@ def reporte(
 ):
     """Reporte de revisión en PDF: lo que el abogado se lleva."""
     contrato = db.scalar(
-        select(Contract).where(Contract.id == contrato_id).options(selectinload(Contract.hallazgos))
+        select(Contract)
+        .where(Contract.id == contrato_id)
+        .options(selectinload(Contract.hallazgos).selectinload(Finding.revisado_por))
     )
     if contrato is None:
         raise HTTPException(status_code=404, detail="Contrato no encontrado")
@@ -194,6 +196,10 @@ def reporte(
                 "score_similitud": h.score_similitud,
                 "clausula": clausulas.get(h.clausula_id),
                 "pagina": paginas.get(h.clausula_id),
+                "revision": h.revision,
+                "comentario_revision": h.comentario_revision,
+                "revisado_por": h.revisado_por.nombre if h.revisado_por else None,
+                "revisado_at": h.revisado_at,
             }
             for h in contrato.hallazgos
         ],

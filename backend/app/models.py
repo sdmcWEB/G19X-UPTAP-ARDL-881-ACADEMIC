@@ -20,6 +20,7 @@ from app.config import settings
 from app.db import Base
 from app.enums import (
     ContractStatus,
+    ReviewStatus,
     Role,
     Severity,
     VerificationStatus,
@@ -31,6 +32,7 @@ __all__ = [
     "Contract",
     "ContractStatus",
     "Finding",
+    "ReviewStatus",
     "RiskType",
     "Role",
     "Severity",
@@ -156,8 +158,19 @@ class Finding(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
+    # --- Revisión humana ---
+    # El sistema propone; el abogado dispone. Sin este dictamen la plataforma
+    # entrega una lista que nadie firma.
+    revision: Mapped[ReviewStatus] = mapped_column(
+        Enum(ReviewStatus), default=ReviewStatus.PENDIENTE, index=True
+    )
+    comentario_revision: Mapped[str | None] = mapped_column(Text)
+    revisado_por_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    revisado_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
     contrato: Mapped[Contract] = relationship(back_populates="hallazgos")
     clausula: Mapped[Clause | None] = relationship()
+    revisado_por: Mapped["User | None"] = relationship(foreign_keys=[revisado_por_id])
 
 
 class AuditLog(Base):

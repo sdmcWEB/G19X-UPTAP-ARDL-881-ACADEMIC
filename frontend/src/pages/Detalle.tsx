@@ -126,6 +126,7 @@ export function Detalle() {
 
         <PanelHallazgos
           hallazgos={contrato.hallazgos}
+          contratoId={contrato.id}
           seleccionado={seleccionado}
           onSeleccionar={setSeleccionado}
         />
