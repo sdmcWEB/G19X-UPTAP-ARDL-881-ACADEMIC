@@ -1,6 +1,6 @@
 """Embeddings locales con bge-m3.
 
-xAI no expone un endpoint de embeddings, así que esto corre en el worker. El
+Groq no expone un endpoint de embeddings, así que esto corre en el worker. El
 modelo pesa ~2 GB y se descarga en el primer uso: por eso el volumen
 `hfcache` en docker-compose, para no re-descargarlo en cada build.
 """

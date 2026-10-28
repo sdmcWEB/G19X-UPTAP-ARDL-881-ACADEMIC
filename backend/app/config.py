@@ -30,9 +30,10 @@ class Settings(BaseSettings):
     # Almacenamiento de archivos (volumen en disco)
     storage_dir: str = "/data/contratos"
 
-    # xAI / Grok
-    xai_api_key: str = ""
-    xai_model: str = "grok-4.7"
+    # Groq (API compatible con OpenAI)
+    groq_api_key: str = ""
+    groq_model: str = "openai/gpt-oss-120b"
+    groq_base_url: str = "https://api.groq.com/openai/v1"
 
     # Embeddings
     embedding_model: str = "BAAI/bge-m3"

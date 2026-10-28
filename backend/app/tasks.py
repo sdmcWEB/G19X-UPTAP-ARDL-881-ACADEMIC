@@ -108,7 +108,7 @@ def analizar_contrato(self, contrato_id: str) -> dict:
             todos.extend(verificados)
 
             for h in verificados:
-                fila = filas_clausulas.get(h.llm.clause_id)
+                fila = filas_clausulas.get(h.clausula.clause_id) if h.clausula else None
                 db.add(
                     Finding(
                         contrato_id=contrato.id,

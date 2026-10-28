@@ -4,16 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from xai_sdk.chat import system, user
-
-from app.ai.client import nuevo_chat
+from app.ai.client import parsear
 from app.ai.schemas import AnalisisLLM, HallazgoLLM
 from app.ai.verify import verificar_cita
 from app.enums import VerificationStatus
 from app.ingest.clauses import Clausula, formatear_para_prompt
 
-# Cuántas cláusulas van por llamada. Grok 4.7 tiene 500k de contexto, así que
-# el límite no es técnico: lotes chicos dan citas más precisas y aíslan fallas.
+# Cuántas cláusulas van por llamada. El contexto del modelo alcanza para
+# mucho más: lotes chicos dan citas más precisas, aíslan fallas y caben en los
+# límites de tokens por minuto del plan gratuito.
 CLAUSULAS_POR_LOTE = 12
 
 SYSTEM_PROMPT = """\
@@ -58,6 +57,22 @@ def _prompt_catalogo(catalogo: list[dict]) -> str:
     return "CATÁLOGO DE TIPOS DE RIESGO:\n" + "\n".join(lineas)
 
 
+def _buscar_cita(
+    cita: str, clausulas: list[Clausula]
+) -> tuple[Clausula | None, VerificationStatus, float]:
+    """La cláusula del lote donde mejor aparece la cita, si aparece de verdad."""
+    mejor: tuple[Clausula | None, VerificationStatus, float] = (
+        None,
+        VerificationStatus.NO_VERIFICADA,
+        0.0,
+    )
+    for c in clausulas:
+        estado, score = verificar_cita(cita, c.texto)
+        if estado != VerificationStatus.NO_VERIFICADA and score > mejor[2]:
+            mejor = (c, estado, score)
+    return mejor
+
+
 def analizar_lote(
     clausulas: list[Clausula],
     catalogo: list[dict],
@@ -73,27 +88,36 @@ def analizar_lote(
         else ""
     )
 
-    chat = nuevo_chat()
-    chat.append(system(SYSTEM_PROMPT))
-    chat.append(
-        user(
-            f"{_prompt_catalogo(catalogo)}{aviso_ocr}\n\n"
-            f"CLÁUSULAS A ANALIZAR:\n\n{formatear_para_prompt(clausulas)}"
-        )
+    analisis = parsear(
+        SYSTEM_PROMPT,
+        f"{_prompt_catalogo(catalogo)}{aviso_ocr}\n\n"
+        f"CLÁUSULAS A ANALIZAR:\n\n{formatear_para_prompt(clausulas)}",
+        AnalisisLLM,
     )
-
-    _, analisis = chat.parse(AnalisisLLM)
 
     verificados: list[HallazgoVerificado] = []
     for h in analisis.hallazgos:
         clausula = indice.get(h.clause_id)
-        if clausula is None:
-            # El modelo citó una cláusula que no existe en este lote: se
-            # conserva el hallazgo pero sin evidencia anclada.
-            verificados.append(HallazgoVerificado(h, None, VerificationStatus.NO_VERIFICADA, 0.0))
-            continue
+        estado, score = (
+            verificar_cita(h.cita_textual, clausula.texto)
+            if clausula
+            else (VerificationStatus.NO_VERIFICADA, 0.0)
+        )
 
-        estado, score = verificar_cita(h.cita_textual, clausula.texto)
+        if estado == VerificationStatus.NO_VERIFICADA:
+            # El modelo suele acertar la cita y errar el número de cláusula. Si
+            # el texto citado aparece en otra cláusula del lote, la evidencia es
+            # real y solo estaba mal ubicada; si no aparece en ninguna, el
+            # hallazgo se conserva sin evidencia anclada.
+            otra, otro_estado, otro_score = _buscar_cita(h.cita_textual, clausulas)
+            if otra is not None:
+                clausula, estado, score = otra, otro_estado, otro_score
+            elif clausula is None:
+                verificados.append(
+                    HallazgoVerificado(h, None, VerificationStatus.NO_VERIFICADA, 0.0)
+                )
+                continue
+
         verificados.append(HallazgoVerificado(h, clausula, estado, score))
 
     return verificados, analisis.resumen

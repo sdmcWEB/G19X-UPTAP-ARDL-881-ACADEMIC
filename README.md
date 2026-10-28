@@ -51,7 +51,7 @@ Abre `.env` y llena dos valores:
 
   Firma los tokens de sesión: una llave predecible deja que cualquiera se
   fabrique un token de administrador.
-- `XAI_API_KEY` — tu llave de [console.x.ai](https://console.x.ai).
+- `GROQ_API_KEY` — tu llave de [console.groq.com](https://console.groq.com).
 
 **Sin la llave PIRC arranca igual.** Sube contratos, extrae el texto,
 aplica OCR, segmenta en cláusulas y genera los embeddings; solo falla en el paso
@@ -210,8 +210,8 @@ Lo que se ha comprobado ejecutando, no suponiendo (20-oct-2026):
   login real a través de la IP de la máquina anfitriona.
 - CI en verde: ruff, 163 pruebas, `tsc` y el build de ambas imágenes.
 
-**El único paso sin ejercitar es la llamada al modelo de Grok**, que necesita
-una `XAI_API_KEY` válida.
+La llamada al modelo (Groq, `openai/gpt-oss-120b`) se ejercitó de punta a punta
+con un contrato sintético; falta medirla con contratos reales etiquetados.
 
 ## Búsqueda semántica
 
@@ -318,7 +318,7 @@ y levanta un Postgres con pgvector para las pruebas de API.
 
 ```
 Subida  →  Extracción  →  Segmentación  →  Análisis  →  Verificación  →  Hallazgos
- API        PyMuPDF        clause_id       Grok 4.7      rapidfuzz       + resaltado
+ API        PyMuPDF        clause_id       gpt-oss-120b     rapidfuzz       + resaltado
             + OCR          + bboxes        (por lotes)
 ```
 
@@ -327,8 +327,7 @@ modelo, un contrato largo tarda minutos y no cabe en un request HTTP.
 
 ### La pieza que sostiene el proyecto: verificación de citas
 
-Grok no cita documentos propios — sus *citations* solo cubren búsqueda web y de
-X — y tampoco acepta PDF de entrada. La trazabilidad que el 038 pide se
+El modelo no cita documentos propios y tampoco acepta PDF de entrada. La trazabilidad que el 038 pide se
 construye así:
 
 1. PyMuPDF extrae cada bloque con **página y coordenadas**.
@@ -378,7 +377,7 @@ backend/
       extract.py         PyMuPDF + OCRmyPDF
       clauses.py         Segmentación y clause_id
     ai/
-      client.py          Envoltura del SDK de xAI
+      client.py          Envoltura del modelo (Groq vía SDK de OpenAI)
       schemas.py         Schema de salida del modelo
       analyze.py         Prompt, lotes y puntuación de riesgo
       verify.py          Verificación de citas
@@ -453,7 +452,7 @@ cascarón blanco.
   almacén de objetos (`put` / `get` / `delete`), así que migrar a S3 es
   reescribir ese archivo y nada más. Las llaves se confinan a la raíz del
   volumen: el nombre del archivo lo elige quien sube el contrato.
-- **Embeddings locales (`bge-m3`)**: xAI no expone endpoint de embeddings, y
+- **Embeddings locales (`bge-m3`)**: Groq no expone endpoint de embeddings, y
   bge-m3 rinde bien en español sin costo por token.
 - **Sin LangChain**: en este alcance el SDK directo es menos código y más control.
 - **Enums fuera del ORM** (`app/enums.py`): la lógica pura —verificación,
@@ -464,7 +463,7 @@ cascarón blanco.
 
 ## Riesgos abiertos
 
-1. **Calidad del OCR.** Los modelos de texto de Grok no tienen visión, así que
+1. **Calidad del OCR.** El modelo de texto no tiene visión, así que
    si Tesseract falla en un escaneo no hay plan B. Hay que medirlo con
    documentos reales de PluriOne cuanto antes.
 2. **Catálogo de riesgos.** Los 18 tipos del seed son un punto de partida; el

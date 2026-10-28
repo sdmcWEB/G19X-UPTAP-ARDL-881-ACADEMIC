@@ -3,7 +3,7 @@
 Las coordenadas son el punto de todo este módulo: sin ellas no se puede
 resaltar la cláusula de riesgo sobre el documento en el visor.
 
-Grok no acepta PDF como entrada ni tiene visión en sus modelos de texto, así
+El modelo no acepta PDF como entrada ni tiene visión en sus modelos de texto, así
 que el OCR aquí no es una comodidad: es el único camino para un escaneo. Si
 Tesseract falla, no hay plan B de "mandarle la imagen al modelo".
 """

@@ -1,7 +1,7 @@
 """Schema de salida que el modelo está obligado a respetar.
 
-Lo usa `chat.parse()` del SDK de xAI, que valida la respuesta contra el modelo
-Pydantic. Los `description` no son documentación: son parte del prompt efectivo.
+Lo usa `parsear()` de `client.py`, que pide al modelo una respuesta con este schema
+y la valida con Pydantic. Los `description` no son documentación: son parte del prompt efectivo.
 """
 
 from pydantic import BaseModel, Field

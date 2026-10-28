@@ -3,7 +3,7 @@
 #
 #   ./scripts/smoke.sh ruta/al/contrato.pdf
 #
-# Recorre: salud → login → subida → pipeline → hallazgos. Sin XAI_API_KEY el
+# Recorre: salud → login → subida → pipeline → hallazgos. Sin GROQ_API_KEY el
 # análisis falla en el paso del modelo, y eso está bien: lo que se verifica
 # aquí es todo lo anterior (extracción, OCR, segmentación, embeddings).
 set -euo pipefail

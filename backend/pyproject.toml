@@ -25,7 +25,7 @@ dependencies = [
     "ocrmypdf>=16.6",
     "rapidfuzz>=3.10",
     "reportlab>=4.2",
-    "xai-sdk>=1.20",
+    "openai>=1.60",
     "structlog>=24.4",
 ]
 
